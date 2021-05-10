@@ -55,7 +55,7 @@ class API1GLSurfaceViewActivity : AppCompatActivity(), View.OnClickListener {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            API1SurfaceViewActivity.CAMERA_PERMISSION_RESULT -> {
+            CAMERA_PERMISSION_RESULT -> {
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                         == PackageManager.PERMISSION_GRANTED) {
                     Log.i(TAG, "onActivityResult permission granted")

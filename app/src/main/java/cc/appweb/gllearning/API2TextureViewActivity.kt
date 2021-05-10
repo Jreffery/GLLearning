@@ -25,6 +25,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
 
     companion object {
         const val TAG = "TAG_API2TextureView"
+        const val CAMERA_PERMISSION_RESULT = 1
     }
 
     private lateinit var mActivityBinding: ActivityApi2TextureviewBinding
@@ -67,7 +68,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            API1SurfaceViewActivity.CAMERA_PERMISSION_RESULT -> {
+            CAMERA_PERMISSION_RESULT -> {
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                         == PackageManager.PERMISSION_GRANTED) {
                     Log.i(TAG, "onActivityResult permission granted")
@@ -113,7 +114,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
                 == PackageManager.PERMISSION_GRANTED) {
             Log.i(API1GLSurfaceViewActivity.TAG, "permission granted")
         } else {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), API1GLSurfaceViewActivity.CAMERA_PERMISSION_RESULT)
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_RESULT)
             return
         }
 
