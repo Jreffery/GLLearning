@@ -20,6 +20,10 @@ import cc.appweb.gllearning.util.StorageUtil
 import java.io.File
 import java.io.FileOutputStream
 
+/**
+ * Camera API2 和 TextureView实现预览与拍照
+ *
+ * */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, ImageReader.OnImageAvailableListener {
 
@@ -102,7 +106,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
     }
 
     private fun switchCamera() {
-        mCameraFacing = if (mCameraFacing == CameraCharacteristics.LENS_FACING_FRONT ) CameraCharacteristics.LENS_FACING_BACK else CameraCharacteristics.LENS_FACING_FRONT
+        mCameraFacing = if (mCameraFacing == CameraCharacteristics.LENS_FACING_FRONT) CameraCharacteristics.LENS_FACING_BACK else CameraCharacteristics.LENS_FACING_FRONT
         mCameraCaptureSession?.let {
             closeCamera()
             openCamera()
@@ -126,7 +130,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
                 if (get(CameraCharacteristics.LENS_FACING) == mCameraFacing) {
                     cameraId = it
                     val sizeMap = get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                    sizeMap?.getOutputSizes(ImageFormat.JPEG)?.forEach {itt->
+                    sizeMap?.getOutputSizes(ImageFormat.JPEG)?.forEach { itt ->
                         Log.i(TAG, "width=${itt.width} height=${itt.height}")
                     }
                     mCameraCharacteristics = this

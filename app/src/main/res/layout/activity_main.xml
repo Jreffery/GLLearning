@@ -57,5 +57,15 @@
         android:layout_height="wrap_content"
         android:text="AudioRecord"/>
 
+    <Button
+        android:id="@+id/play_audio"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/audio_record"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="PlayAudio"/>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

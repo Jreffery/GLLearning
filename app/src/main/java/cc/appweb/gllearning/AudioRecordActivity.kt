@@ -1,6 +1,7 @@
 package cc.appweb.gllearning
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
@@ -17,6 +18,10 @@ import cc.appweb.gllearning.util.StorageUtil
 import java.io.File
 import java.io.FileOutputStream
 
+/**
+ * 录音Activity
+ *
+ * */
 class AudioRecordActivity : AppCompatActivity(), View.OnClickListener {
 
     private lateinit var mActivityBinding: ActivityAudioRecordBinding
@@ -63,6 +68,7 @@ class AudioRecordActivity : AppCompatActivity(), View.OnClickListener {
 
         mActivityBinding = ActivityAudioRecordBinding.bind(findViewById(R.id.audio_record_container))
         mActivityBinding.recordView.setOnClickListener(this)
+        mActivityBinding.startPlayAudio.setOnClickListener(this)
     }
 
     override fun onClick(v: View?) {
@@ -78,6 +84,10 @@ class AudioRecordActivity : AppCompatActivity(), View.OnClickListener {
                     // 停止录音
                     closeRecord()
                 }
+            }
+            mActivityBinding.startPlayAudio -> {
+                // 跳转到播放音频
+                startActivity(Intent(this, PlayAudioActivity::class.java))
             }
         }
     }

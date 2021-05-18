@@ -6,12 +6,11 @@ class StorageUtil {
 
     companion object {
 
-        const val PATH_LEARNING = "learning"
+        private const val PATH_LEARNING = "learning"
 
-        val PATH_LEARNING_PIC = "learning" + File.separator + "picture"
+        val PATH_LEARNING_PIC = PATH_LEARNING + File.separator + "picture"
 
-        val PATH_LEARNING_VOICE = "learning" + File.separator + "voice"
-
+        val PATH_LEARNING_VOICE = PATH_LEARNING + File.separator + "voice"
 
         fun getFile(relativePath: String): File {
             val path = relativePath.split(File.separator)

@@ -19,8 +19,6 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.abs
 
-
-
 /**
  * Camera API1和SurfaceView组合实现相机预览功能
  * */
