@@ -1,10 +1,9 @@
 package cc.appweb.gllearning.audio
 
 import android.media.AudioTrack
-import android.os.Handler
-import android.os.Looper
 import android.os.Process
 import android.util.Log
+import cc.appweb.gllearning.util.AppUtil
 import java.io.FileInputStream
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -19,8 +18,7 @@ object AudioTrackManager {
     // 播放PCM流的对象
     private var mAudioTrack: AudioTrack? = null
 
-    // 主线程回调
-    private val mHandler = Handler(Looper.getMainLooper())
+
 
     // 线程数计数
     private val mThreadNum = AtomicInteger(0)
@@ -36,7 +34,7 @@ object AudioTrackManager {
      * */
     fun playAudio(pcmFilePath: String, streamType: Int, sampleRate: Int,
                   channelType: Int, audioFormat: Int, playListener: OnPlayListener?) {
-        runOnUIThread {
+        AppUtil.runOnUIThread {
             // 根据采样率，采样精度，单双声道来得到frame的大小。
             // 用于播放类型为MODE_STREAM时定义buffer大小
             val minBufferSize = AudioTrack.getMinBufferSize(sampleRate, channelType, audioFormat)
@@ -47,13 +45,17 @@ object AudioTrackManager {
             } catch (t: Throwable) {
                 t.printStackTrace()
             }
-            mAudioTrack = AudioTrack(streamType, sampleRate, channelType, audioFormat, minBufferSize, AudioTrack.MODE_STREAM).apply {
+            mAudioTrack = AudioTrack(streamType, sampleRate, channelType, audioFormat,
+                    minBufferSize, AudioTrack.MODE_STREAM).apply {
                 // 开始播放线程
                 PlayThread(pcmFilePath, minBufferSize, this, playListener).start()
             }
         }
     }
 
+    /**
+     * 停止播放
+     * */
     fun stop() {
         try {
             mAudioTrack?.stop()
@@ -62,17 +64,8 @@ object AudioTrackManager {
         }
     }
 
-    private fun runOnUIThread(action: AudioTrackManager.()->Unit) {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            action.invoke(this)
-        } else {
-            mHandler.post {
-                action.invoke(this)
-            }
-        }
-    }
-
-    private class PlayThread(val pcmFilePath: String,val minBufferSize: Int, val audioTrack: AudioTrack, val playListener: OnPlayListener?) : Thread() {
+    private class PlayThread(val pcmFilePath: String, val minBufferSize: Int,
+                             val audioTrack: AudioTrack, val playListener: OnPlayListener?) : Thread() {
         override fun run() {
             var fileInput: FileInputStream? = null
             try {
@@ -85,7 +78,7 @@ object AudioTrackManager {
                 val byteBuffer = ByteArray(minBufferSize)
                 // 调用播放
                 playListener?.let {
-                    runOnUIThread {
+                    AppUtil.runOnUIThread {
                         it.onStart()
                     }
                 }
@@ -123,7 +116,7 @@ object AudioTrackManager {
                 }
             }
             // 回收对象
-            runOnUIThread {
+            AppUtil.runOnUIThread {
                 if (audioTrack == mAudioTrack) {
                     mAudioTrack = null
                 }

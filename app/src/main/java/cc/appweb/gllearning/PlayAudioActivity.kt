@@ -14,8 +14,12 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import cc.appweb.gllearning.audio.AudioTrackManager
+import cc.appweb.gllearning.audio.AudioTrackNativeMgr
+import cc.appweb.gllearning.audio.CHANNEL_OUT_MONO
+import cc.appweb.gllearning.audio.ENCODING_16BIT
 import cc.appweb.gllearning.databinding.ActivityPlayAudioBinding
 import cc.appweb.gllearning.databinding.PlayAudioItemViewBinding
+import cc.appweb.gllearning.util.AppConfig
 import cc.appweb.gllearning.util.StorageUtil
 
 /**
@@ -24,6 +28,7 @@ import cc.appweb.gllearning.util.StorageUtil
 class PlayAudioActivity : AppCompatActivity() {
 
     private lateinit var mActivityBinding: ActivityPlayAudioBinding
+    private var mUsingNativePlayer = false
 
     private lateinit var mHandler: Handler
     private val mAudioDataList = mutableListOf<PlayAudioData>()
@@ -51,6 +56,11 @@ class PlayAudioActivity : AppCompatActivity() {
         })
         val adapter = MyAdapter()
         mActivityBinding.recycleView.adapter = adapter
+        mUsingNativePlayer = AppConfig.getBoolean(AppConfig.KEY_NATIVE_AUDIO_PLAYER_SWITCH, false)
+        mActivityBinding.playerSwitch.setOnCheckedChangeListener { _, isChecked ->
+            AppConfig.putBoolean(AppConfig.KEY_NATIVE_AUDIO_PLAYER_SWITCH, isChecked)
+        }
+        mActivityBinding.playerSwitch.isChecked = mUsingNativePlayer
     }
 
 
@@ -82,34 +92,64 @@ class PlayAudioActivity : AppCompatActivity() {
     private fun onClick(position: Int) {
         // 点击播放
         mAudioDataList[position].apply {
+            if (mUsingNativePlayer) {
+                AudioTrackNativeMgr.playAudio(path, 1, 44100, CHANNEL_OUT_MONO, ENCODING_16BIT, object : AudioTrackNativeMgr.OnPlayListener {
+                    override fun onStart() {
+                        Log.i(TAG, "native play audio onStart path=$path")
+                        type = TYPE_STATUS_PLAYING
+                        mActivityBinding.recycleView.adapter!!.notifyDataSetChanged()
+                        mActivityBinding.audioStatus.text = "播放中"
+                    }
 
-            // 统一使用AudioRecordActivity的录音配置
-            // 使用媒体音量
-            // 44100的采样率
-            // 单声道
-            // 16位编码
-            AudioTrackManager.playAudio(path, AudioManager.STREAM_MUSIC, 44100,
-                    AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, object : AudioTrackManager.OnPlayListener {
+                    override fun onEnd() {
+                        Log.i(TAG, "native play audio onEnd path=$path")
+                        type = TYPE_STATUS_STOPPED
+                        mActivityBinding.recycleView.adapter!!.notifyDataSetChanged()
+                        mActivityBinding.audioStatus.text = "未播放"
+                    }
+                })
+            } else {
+                // 统一使用AudioRecordActivity的录音配置
+                // 使用媒体音量
+                // 44100的采样率
+                // 单声道
+                // 16位编码
+                AudioTrackManager.playAudio(path, AudioManager.STREAM_MUSIC, 44100,
+                        AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, object : AudioTrackManager.OnPlayListener {
 
-                override fun onStart() {
-                    Log.i(TAG, "play audio onStart path=$path")
-                    type = TYPE_STATUS_PLAYING
-                    mActivityBinding.recycleView.adapter!!.notifyDataSetChanged()
-                }
+                    override fun onStart() {
+                        Log.i(TAG, "play audio onStart path=$path")
+                        type = TYPE_STATUS_PLAYING
+                        mActivityBinding.recycleView.adapter!!.notifyDataSetChanged()
+                        mActivityBinding.audioStatus.text = "播放中"
+                    }
 
-                override fun onEnd() {
-                    Log.i(TAG, "play audio onEnd path=$path")
-                    type = TYPE_STATUS_STOPPED
-                    mActivityBinding.recycleView.adapter!!.notifyDataSetChanged()
-                }
+                    override fun onEnd() {
+                        Log.i(TAG, "play audio onEnd path=$path")
+                        type = TYPE_STATUS_STOPPED
+                        mActivityBinding.recycleView.adapter!!.notifyDataSetChanged()
+                        mActivityBinding.audioStatus.text = "未播放"
+                    }
 
-            })
+                })
+            }
         }
     }
 
     override fun onPause() {
         super.onPause()
-        AudioTrackManager.stop()
+        if (mUsingNativePlayer) {
+            AudioTrackNativeMgr.stopAudio()
+        } else {
+            AudioTrackManager.stop()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (mUsingNativePlayer) {
+            AudioTrackNativeMgr.releasePlayer()
+        }
     }
 
     private inner class MyAdapter : RecyclerView.Adapter<MyViewHolder>() {
