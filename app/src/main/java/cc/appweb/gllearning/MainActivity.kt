@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         mActivityBinding.camera2Textureview.setOnClickListener(this)
         mActivityBinding.audioRecord.setOnClickListener(this)
         mActivityBinding.playAudio.setOnClickListener(this)
+        mActivityBinding.mediaCodec.setOnClickListener(this)
         var permission = arrayOfNulls<String>(2)
         var index = 0
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -68,6 +69,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             }
             mActivityBinding.playAudio -> {
                 startActivity(Intent(this, PlayAudioActivity::class.java))
+            }
+            mActivityBinding.mediaCodec -> {
+                startActivity(Intent(this, MediaCodecActivity::class.java))
             }
         }
     }

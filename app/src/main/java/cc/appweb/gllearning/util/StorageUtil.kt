@@ -12,6 +12,8 @@ class StorageUtil {
 
         val PATH_LEARNING_VOICE = PATH_LEARNING + File.separator + "voice"
 
+        val PATH_LEARNING_MP4 = PATH_LEARNING + File.separator + "mp4"
+
         fun getFile(relativePath: String): File {
             val path = relativePath.split(File.separator)
             var rootPath = AppUtil.getContext().getExternalFilesDir(null)!!.absolutePath

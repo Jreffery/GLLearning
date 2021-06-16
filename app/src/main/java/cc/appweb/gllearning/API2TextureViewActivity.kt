@@ -16,16 +16,19 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import cc.appweb.gllearning.databinding.ActivityApi2TextureviewBinding
+import cc.appweb.gllearning.mediacodec.VideoEncoder
 import cc.appweb.gllearning.util.StorageUtil
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.ByteBuffer
+import kotlin.math.abs
 
 /**
- * Camera API2 和 TextureView实现预览与拍照
+ * Camera API2 和 TextureView实现预览、拍照、录制
  *
  * */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, ImageReader.OnImageAvailableListener {
+class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
 
     companion object {
         const val TAG = "TAG_API2TextureView"
@@ -34,7 +37,10 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
 
     private lateinit var mActivityBinding: ActivityApi2TextureviewBinding
 
+    // 主线程handler
     private lateinit var mMainHandler: Handler
+
+    private lateinit var mImageHandler: Handler
 
     // 相机服务，用于打开/关闭摄像头
     private lateinit var mCameraManager: CameraManager
@@ -45,6 +51,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
     // 相机特征
     private var mCameraCharacteristics: CameraCharacteristics? = null
 
+    // 相机请求会话
     private var mCameraCaptureSession: CameraCaptureSession? = null
 
     // 需要打开前置/后置摄像头，默认为前置
@@ -53,6 +60,16 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
     // 拍照图像接收者
     private var mImageReader: ImageReader? = null
 
+    // 图像回调线程
+    private var mViewThread: HandlerThread? = null
+
+    // 录制ImageReader
+    private var mRecordReader: ImageReader? = null
+
+    // 是否正在录制
+    private var mRecording = false
+
+    private var mEncoder: VideoEncoder? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +81,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
         mActivityBinding.closeCamera.setOnClickListener(this)
         mActivityBinding.takePicture.setOnClickListener(this)
         mActivityBinding.switchCamera.setOnClickListener(this)
+        mActivityBinding.videoRecorder.setOnClickListener(this)
 
         mCameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
@@ -88,6 +106,14 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
         closeCamera()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        mViewThread?.let {
+            it.quit()
+            mViewThread = null
+        }
+    }
+
     override fun onClick(v: View?) {
         when (v) {
             mActivityBinding.openCamera -> {
@@ -101,6 +127,9 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
             }
             mActivityBinding.switchCamera -> {
                 switchCamera()
+            }
+            mActivityBinding.videoRecorder -> {
+                takeRecorder()
             }
         }
     }
@@ -138,9 +167,20 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
             }
         }
 
+        mViewThread?:let {
+            mViewThread = HandlerThread("ViewThread").apply {
+                start()
+            }
+        }
+
+        mImageHandler = Handler(mViewThread!!.looper)
         // 创建图像接收者，指定width/height
         mImageReader = ImageReader.newInstance(1280, 720, ImageFormat.JPEG, 1).apply {
-            setOnImageAvailableListener(this@API2TextureViewActivity, mMainHandler)
+            setOnImageAvailableListener(PictureReaderCallback(), mImageHandler)
+        }
+        // 录制图像接收者
+        mRecordReader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, 5).apply {
+            setOnImageAvailableListener(RecordReaderCallback(), mImageHandler)
         }
 
         // 获取相机实例，实例连接状态回调为StateCallback，运行在mMainHandler线程
@@ -161,6 +201,13 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
 
             override fun onClosed(camera: CameraDevice) {
                 Log.i(TAG, "openCamera onClosed")
+                mImageHandler.post {
+                    mRecording = false
+                    mEncoder?.let {
+                        it.stop()
+                        mEncoder = null
+                    }
+                }
             }
 
         }, mMainHandler)
@@ -189,14 +236,27 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
             mCameraDevice?.let {
                 // 创建一个session
                 val surface = Surface(mActivityBinding.preview.surfaceTexture)
-                it.createCaptureSession(mutableListOf(surface, mImageReader!!.surface), object : CameraCaptureSession.StateCallback() {
+                // 三个surface：预览、录制、图片
+                it.createCaptureSession(mutableListOf(surface, mRecordReader!!.surface, mImageReader!!.surface), object : CameraCaptureSession.StateCallback() {
                     override fun onConfigured(session: CameraCaptureSession) {
                         Log.i(TAG, "onConfigured")
                         mCameraCaptureSession = session.apply {
                             // 创建一个系统预设好的（TEMPLATE_PREVIEW）预览的request builder
                             val previewBuilder = it.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                            // 绑定表面
+                            mCameraCharacteristics?.let { characteristics ->
+                                // 帧率，遍历可用帧率，找到最接近15的帧率
+                                var fps = previewBuilder.get(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE)
+                                characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)?.forEach { fpsRange->
+                                    if (abs(fps!!.upper - 15) > abs(fpsRange.upper - 15)) {
+                                        fps = fpsRange
+                                    }
+                                }
+                                previewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fps)
+                            }
+
+                            // 绑定表面：预览与录制
                             previewBuilder.addTarget(surface)
+                            previewBuilder.addTarget(mRecordReader!!.surface)
                             setRepeatingRequest(previewBuilder.build(), object : CameraCaptureSession.CaptureCallback() {
                                 override fun onCaptureStarted(session: CameraCaptureSession, request: CaptureRequest, timestamp: Long, frameNumber: Long) {
 //                                    Log.i(TAG, "onCaptureStarted")
@@ -259,36 +319,89 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener, Image
         }
     }
 
-    override fun onImageAvailable(reader: ImageReader?) {
-        Log.i(TAG, "onImageAvailable")
-
-        reader?.let {
-            val image = it.acquireNextImage()
-            val byteBuffer = image.planes[0].buffer
-            val byteArray = ByteArray(byteBuffer.remaining())
-            byteBuffer.get(byteArray)
-            it.close()
-            //拍照成功
-            // 拍照成功
-            Thread {
-                val file = StorageUtil.getFile("${StorageUtil.PATH_LEARNING_PIC + File.separator}pic${System.currentTimeMillis()}.jpeg")
-                try {
-                    val fileOutput = FileOutputStream(file)
-                    fileOutput.write(byteArray)
-                    fileOutput.flush()
-                    mActivityBinding.api2TextureviewContainer.post {
-                        Toast.makeText(this, "保存成功，路径：${file.absolutePath}", Toast.LENGTH_SHORT).show()
-                    }
-                    fileOutput.close()
-                    return@Thread
-                } catch (t: Throwable) {
-                    t.printStackTrace()
-                }
-                mActivityBinding.api2TextureviewContainer.post {
-                    Toast.makeText(this, "保存失败", Toast.LENGTH_SHORT).show()
-                }
-            }.start()
-
+    private fun takeRecorder() {
+        mCameraCaptureSession?.let {
+            if (mRecording) {
+                Toast.makeText(this, "停止录制", Toast.LENGTH_SHORT).show()
+                mActivityBinding.videoRecorder.text = "开始录制"
+            } else {
+                Toast.makeText(this, "开始录制", Toast.LENGTH_SHORT).show()
+                mActivityBinding.videoRecorder.text = "停止录制"
+            }
+            mImageHandler.post {
+                mRecording = !mRecording
+            }
         }
     }
+
+    // 接收拍照图片的回调，回调非主线程
+    private inner class PictureReaderCallback: ImageReader.OnImageAvailableListener {
+        override fun onImageAvailable(reader: ImageReader?) {
+            Log.i(TAG, "onImageAvailable")
+
+            reader?.let {
+                it.acquireNextImage()?.apply {
+                    val byteBuffer = planes[0].buffer
+                    val byteArray = ByteArray(byteBuffer.remaining())
+                    byteBuffer.get(byteArray)
+                    // 需要关闭image
+                    close()
+                    //拍照成功
+                    // 拍照成功
+                    Thread {
+                        val file = StorageUtil.getFile("${StorageUtil.PATH_LEARNING_PIC + File.separator}pic${System.currentTimeMillis()}.jpeg")
+                        try {
+                            val fileOutput = FileOutputStream(file)
+                            fileOutput.write(byteArray)
+                            fileOutput.flush()
+                            mActivityBinding.api2TextureviewContainer.post {
+                                Toast.makeText(this@API2TextureViewActivity, "保存成功，路径：${file.absolutePath}", Toast.LENGTH_SHORT).show()
+                            }
+                            fileOutput.close()
+                            return@Thread
+                        } catch (t: Throwable) {
+                            t.printStackTrace()
+                        }
+                        mActivityBinding.api2TextureviewContainer.post {
+                            Toast.makeText(this@API2TextureViewActivity, "保存失败", Toast.LENGTH_SHORT).show()
+                        }
+                    }.start()
+                }
+            }
+        }
+    }
+
+    // 录制图像接收者，回调非主线程
+    private inner class RecordReaderCallback: ImageReader.OnImageAvailableListener {
+        override fun onImageAvailable(reader: ImageReader?) {
+            reader?.let {
+                it.acquireNextImage()?.apply {
+                    Log.i(TAG, "RecordReaderCallback acquire image")
+                    if (mRecording) {
+                        mEncoder?:let {
+                            mEncoder = VideoEncoder(1280, 720, 15, 3 * 1024 * 1024, 1)
+                        }
+
+                        // YUV420
+                        val inputBuffer = ByteBuffer.allocate(1280 * 720 * 3 / 2)
+                        // plane[0] + plane[1] = NV12
+                        // plane[0] + plane[2] = NV21
+                        inputBuffer.put(planes[0].buffer)
+                        inputBuffer.put(planes[1].buffer)
+                        mEncoder!!.offerImage(inputBuffer.array())
+                    } else {
+                        mEncoder?.apply {
+                            stop()
+                            mEncoder = null
+                        }
+                    }
+
+                    // 需要关闭image
+                    close()
+                }
+            }
+        }
+
+    }
+
 }

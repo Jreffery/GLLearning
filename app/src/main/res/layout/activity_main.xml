@@ -67,5 +67,14 @@
         android:layout_height="wrap_content"
         android:text="PlayAudio"/>
 
+    <Button
+        android:id="@+id/media_codec"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/play_audio"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="MediaCodec"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
