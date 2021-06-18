@@ -165,6 +165,7 @@ class PlayAudioActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
             mAudioDataList[position].apply {
                 holder.itemBinding.audioName.text = name
+                holder.itemBinding.root.tag = holder
                 if (type == TYPE_STATUS_STOPPED) {
                     holder.itemBinding.audioName.setTextColor(ResourcesCompat.getColor(resources, R.color.black, null))
                 } else if (type == TYPE_STATUS_PLAYING) {
@@ -182,12 +183,6 @@ class PlayAudioActivity : AppCompatActivity() {
 
 private data class PlayAudioData(val name: String, val path: String, var type: Int)
 
-private class MyViewHolder(val itemBinding: PlayAudioItemViewBinding) : RecyclerView.ViewHolder(itemBinding.root) {
-
-    init {
-        itemBinding.root.tag = this
-    }
-
-}
+private class MyViewHolder(val itemBinding: PlayAudioItemViewBinding) : RecyclerView.ViewHolder(itemBinding.root)
 
 

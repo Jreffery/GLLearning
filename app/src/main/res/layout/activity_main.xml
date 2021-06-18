@@ -75,6 +75,6 @@
         android:layout_marginLeft="10dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="MediaCodec"/>
+        android:text="MediaCodec+Player"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

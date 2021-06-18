@@ -8,4 +8,31 @@
     android:id="@+id/media_codec_container"
     tools:context=".MediaCodecActivity">
 
+    <TextView
+        android:id="@+id/play_duration"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:textColor="#ee000000"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="15sp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/play_list"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/play_duration"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"/>
+
+    <TextureView
+        android:id="@+id/player_view"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/play_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
