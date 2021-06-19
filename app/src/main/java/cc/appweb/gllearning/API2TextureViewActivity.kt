@@ -8,6 +8,8 @@ import android.hardware.camera2.*
 import android.media.ImageReader
 import android.os.*
 import android.util.Log
+import android.util.Range
+import android.util.Size
 import android.view.Surface
 import android.view.View
 import android.widget.Toast
@@ -69,7 +71,16 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
     // 是否正在录制
     private var mRecording = false
 
+    // 视频编码器
     private var mEncoder: VideoEncoder? = null
+
+    private var mPictureSize: Size? = null
+
+    // 录像帧率
+    private var mRecordFps: Range<Int>? = null
+
+    // 录像分辨率
+    private var mRecordSize: Size? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -153,35 +164,68 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
 
         // 获取对应camera的id
         var cameraId: String? = null
-        mCameraManager.cameraIdList.forEach {
+        mCameraManager.cameraIdList.find {
             mCameraManager.getCameraCharacteristics(it).apply {
                 // 获取对应cameraId的相机特征
                 if (get(CameraCharacteristics.LENS_FACING) == mCameraFacing) {
                     cameraId = it
-                    val sizeMap = get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                    sizeMap?.getOutputSizes(ImageFormat.JPEG)?.forEach { itt ->
-                        Log.i(TAG, "width=${itt.width} height=${itt.height}")
-                    }
                     mCameraCharacteristics = this
+
+                    var fps: Range<Int>? = null
+                    // 帧率，遍历可用帧率，找到最接近15的帧率
+                    get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)?.forEach { fpsRange ->
+                        fps?.let {
+                            if (abs(fps!!.upper - 15) > abs(fpsRange.upper - 15)) {
+                                fps = fpsRange
+                            }
+                        } ?: let {
+                            fps = fpsRange
+                        }
+                    }
+                    mRecordFps = fps
+
+                    // 拍照与录像的分辨率，最接近1280*720
+                    get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)?.apply {
+                        val prefectSize = 1280 * 720
+                        mPictureSize = null
+                        getOutputSizes(ImageFormat.JPEG)?.forEach { size ->
+                            Log.d(TAG, "support jpeg output size width=${size.width} height=${size.height}")
+                            mPictureSize?.let { picture ->
+                                if (abs(prefectSize - picture.width * picture.height) > abs(prefectSize - size.width * size.height)) {
+                                    mPictureSize = size
+                                }
+                            } ?: let {
+                                mPictureSize = size
+                            }
+                        }
+
+                        mRecordSize = null
+                        getOutputSizes(ImageFormat.YUV_420_888)?.forEach { size ->
+                            Log.d(TAG, "support yuv420 output size width=${size.width} height=${size.height}")
+                            mRecordSize?.let { recordSize ->
+                                if (abs(prefectSize - recordSize.width * recordSize.height) > abs(prefectSize - size.width * size.height)) {
+                                    mRecordSize = size
+                                }
+                            } ?: let {
+                                mRecordSize = size
+                            }
+                        }
+                    }
+
+                    Log.i(TAG, "picture size{w=${mPictureSize!!.width} h=${mPictureSize!!.height}} " +
+                            "record size{w=${mRecordSize!!.width} h=${mRecordSize!!.height}}")
                 }
             }
+            return@find mCameraCharacteristics != null
         }
 
-        mViewThread?:let {
+        mViewThread ?: let {
             mViewThread = HandlerThread("ViewThread").apply {
                 start()
             }
         }
 
         mImageHandler = Handler(mViewThread!!.looper)
-        // 创建图像接收者，指定width/height
-        mImageReader = ImageReader.newInstance(1280, 720, ImageFormat.JPEG, 1).apply {
-            setOnImageAvailableListener(PictureReaderCallback(), mImageHandler)
-        }
-        // 录制图像接收者
-        mRecordReader = ImageReader.newInstance(1280, 720, ImageFormat.YUV_420_888, 5).apply {
-            setOnImageAvailableListener(RecordReaderCallback(), mImageHandler)
-        }
 
         // 获取相机实例，实例连接状态回调为StateCallback，运行在mMainHandler线程
         mCameraManager.openCamera(cameraId!!, object : CameraDevice.StateCallback() {
@@ -202,10 +246,15 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
             override fun onClosed(camera: CameraDevice) {
                 Log.i(TAG, "openCamera onClosed")
                 mImageHandler.post {
-                    mRecording = false
-                    mEncoder?.let {
-                        it.stop()
-                        mEncoder = null
+                    if (mRecording) {
+                        mRecording = false
+                        mEncoder?.let {
+                            it.stop()
+                            mEncoder = null
+                        }
+                        mMainHandler.post {
+                            mActivityBinding.videoRecorder.text = "开始录制"
+                        }
                     }
                 }
             }
@@ -227,6 +276,10 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
             it.close()
             mImageReader = null
         }
+        mRecordReader?.let {
+            it.close()
+            mRecordReader = null
+        }
     }
 
     // 开启预览
@@ -234,6 +287,15 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
         Log.i(TAG, "openPreview")
         if (mActivityBinding.preview.isAvailable) {
             mCameraDevice?.let {
+
+                // 创建图像接收者，指定width/height
+                mImageReader = ImageReader.newInstance(mPictureSize!!.width, mPictureSize!!.height, ImageFormat.JPEG, 1).apply {
+                    setOnImageAvailableListener(PictureReaderCallback(), mImageHandler)
+                }
+                // 录制图像接收者
+                mRecordReader = ImageReader.newInstance(mRecordSize!!.width, mRecordSize!!.height, ImageFormat.YUV_420_888, 5).apply {
+                    setOnImageAvailableListener(RecordReaderCallback(), mImageHandler)
+                }
                 // 创建一个session
                 val surface = Surface(mActivityBinding.preview.surfaceTexture)
                 // 三个surface：预览、录制、图片
@@ -243,15 +305,9 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
                         mCameraCaptureSession = session.apply {
                             // 创建一个系统预设好的（TEMPLATE_PREVIEW）预览的request builder
                             val previewBuilder = it.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                            mCameraCharacteristics?.let { characteristics ->
-                                // 帧率，遍历可用帧率，找到最接近15的帧率
-                                var fps = previewBuilder.get(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE)
-                                characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)?.forEach { fpsRange->
-                                    if (abs(fps!!.upper - 15) > abs(fpsRange.upper - 15)) {
-                                        fps = fpsRange
-                                    }
-                                }
-                                previewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, fps)
+                            // 设置帧率
+                            mRecordFps?.let {
+                                previewBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, it)
                             }
 
                             // 绑定表面：预览与录制
@@ -335,7 +391,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     // 接收拍照图片的回调，回调非主线程
-    private inner class PictureReaderCallback: ImageReader.OnImageAvailableListener {
+    private inner class PictureReaderCallback : ImageReader.OnImageAvailableListener {
         override fun onImageAvailable(reader: ImageReader?) {
             Log.i(TAG, "onImageAvailable")
 
@@ -372,18 +428,18 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     // 录制图像接收者，回调非主线程
-    private inner class RecordReaderCallback: ImageReader.OnImageAvailableListener {
+    private inner class RecordReaderCallback : ImageReader.OnImageAvailableListener {
         override fun onImageAvailable(reader: ImageReader?) {
             reader?.let {
                 it.acquireNextImage()?.apply {
                     Log.i(TAG, "RecordReaderCallback acquire image")
                     if (mRecording) {
-                        mEncoder?:let {
-                            mEncoder = VideoEncoder(1280, 720, 15, 3 * 1024 * 1024, 1)
+                        mEncoder ?: let {
+                            mEncoder = VideoEncoder(mRecordSize!!.width, mRecordSize!!.height, mRecordFps!!.upper, 3 * 1024 * 1024, 1)
                         }
 
                         // YUV420
-                        val inputBuffer = ByteBuffer.allocate(1280 * 720 * 3 / 2)
+                        val inputBuffer = ByteBuffer.allocate(mRecordSize!!.width * mRecordSize!!.height * 3 / 2)
                         // plane[0] + plane[1] = NV12
                         // plane[0] + plane[2] = NV21
                         inputBuffer.put(planes[0].buffer)
