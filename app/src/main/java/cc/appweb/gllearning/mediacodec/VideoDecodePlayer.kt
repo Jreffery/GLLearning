@@ -4,7 +4,6 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.os.Build
-import android.os.SystemClock
 import android.util.Log
 import android.view.Surface
 import androidx.annotation.RequiresApi
@@ -139,7 +138,7 @@ class VideoDecodePlayer(val filePath: String, val surface: Surface, val playList
             // 开启解码器
             mediaCodec.start()
 
-            var mLastQueueTime = 0L
+            var lastQueueTime = 0L
             while (mDecodeRun || !mPlayFrameList.isEmpty()) {
                 // 至多等待500毫秒
                 val inputBufferIndex = mMediaCodecInputBufferIndex.poll(500, TimeUnit.MILLISECONDS)
@@ -147,9 +146,9 @@ class VideoDecodePlayer(val filePath: String, val surface: Surface, val playList
                     // 同样至多等待500毫秒
                     val playFrame = mPlayFrameList.poll(500, TimeUnit.MILLISECONDS)
                     playFrame?.let { frame ->
-                        if (mLastQueueTime != 0L) {
+                        if (lastQueueTime != 0L) {
                             // 与上次送解码的时间差
-                            val diff1 = (System.nanoTime() - mLastQueueTime) / 1000
+                            val diff1 = (System.nanoTime() - lastQueueTime) / 1000
                             // 当前帧与上一帧的时间差
                             val diff2 = frame.presentationTimeUs - mLastDecodePresentationTime
                             if (diff2 > diff1 && diff2 - diff1 > 5000) {
@@ -167,7 +166,7 @@ class VideoDecodePlayer(val filePath: String, val surface: Surface, val playList
                             buffer.put(frame.byteBuffer)
                             mediaCodec.queueInputBuffer(inputIndex, 0, frame.size, frame.presentationTimeUs, frame.flags)
                             mLastDecodePresentationTime = frame.presentationTimeUs
-                            mLastQueueTime = System.nanoTime()
+                            lastQueueTime = System.nanoTime()
                         }
 
                     } ?: let {
@@ -176,6 +175,16 @@ class VideoDecodePlayer(val filePath: String, val surface: Surface, val playList
                     }
                 }
             }
+            // 插入结束位
+            var endIndex: Int = -1
+            while (endIndex < 0) {
+                endIndex = mMediaCodecInputBufferIndex.poll(500, TimeUnit.MILLISECONDS)
+            }
+            mediaCodec.getInputBuffer(endIndex)?.let { buffer ->
+                buffer.clear()
+                mediaCodec.queueInputBuffer(endIndex, 0, 0, mLastDecodePresentationTime, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+            }
+
             mPlayRun = false
             Log.i(TAG, "decode finish!")
         }
