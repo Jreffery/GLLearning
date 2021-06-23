@@ -11,33 +11,32 @@
 #define TAG "VoicePlayer"
 
 // 对象与接口的关系
-SLObjectItf engineObject = nullptr; // 用SLObjectItf声明引擎接口对象
-SLEngineItf engineEngine = nullptr; // 声明具体的引擎对象实例
+static SLObjectItf engineObject = nullptr; // 用SLObjectItf声明引擎接口对象
+static SLEngineItf engineEngine = nullptr; // 声明具体的引擎对象实例
 
 // 混音器对象
-SLObjectItf outputMixObject = nullptr;
+static SLObjectItf outputMixObject = nullptr;
 // 混音器接口
-SLEnvironmentalReverbItf outputMixEnvironmentalReverb = nullptr;
+static SLEnvironmentalReverbItf outputMixEnvironmentalReverb = nullptr;
 
 // 播放器对象
-SLObjectItf playerObject = nullptr;
+static SLObjectItf playerObject = nullptr;
 // 播放器接口
-SLPlayItf playerPlay = nullptr;
-SLAndroidSimpleBufferQueueItf bufferQueue = nullptr;
+static SLPlayItf playerPlay = nullptr;
+static SLAndroidSimpleBufferQueueItf bufferQueue = nullptr;
 
 // 每次写入的大小
-SLuint32 enqueueSize;
+static SLuint32 enqueueSize;
 
 // 待播放的pcm文件路径
-const char *playPcmFilePath = nullptr;
+static const char *playPcmFilePath = nullptr;
 // 打开的文件
-FILE *playFile = nullptr;
-char *playBuffer = nullptr;
+static FILE *playFile = nullptr;
+static char *playBuffer = nullptr;
 
-std::mutex mtx;
+static std::mutex mtx;
 
-
-void createEngine() {
+static void createEngine() {
     if (engineEngine == nullptr) {
         SLresult result;
         // 通过slCreateEngine创建引擎，engineObject指向引擎的指针
@@ -52,7 +51,7 @@ void createEngine() {
     }
 }
 
-void createMix() {
+static void createMix() {
     if (outputMixObject == nullptr) {
         // 混音器接口
         const SLInterfaceID mids[1] = {SL_IID_ENVIRONMENTALREVERB};
@@ -77,7 +76,7 @@ void createMix() {
     }
 }
 
-void closeFile() {
+static void closeFile() {
     std::lock_guard<std::mutex> lock(mtx);
     if (playPcmFilePath != nullptr) {
         delete playPcmFilePath;
@@ -94,7 +93,7 @@ void closeFile() {
 }
 
 
-SLuint32 getPcmData(void **pcmBuffer) {
+static SLuint32 getPcmData(void **pcmBuffer) {
     LOGD(TAG, "getPcmData");
     // 打开文件
     SLuint32 ret = 0;
@@ -115,7 +114,7 @@ SLuint32 getPcmData(void **pcmBuffer) {
     return ret;
 }
 
-void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void * context) {
+static void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf bf, void * context) {
     LOGD(TAG, "pcmBufferCallBack");
     // 声明取数据的指针
     void *buffer;
@@ -162,7 +161,7 @@ void playVoice(const char *pcmFilePath, SLuint32 numChannels, SLuint32 samplesPe
             bitsPerSample,  // 位数 16位
             containerSize,  // 和位数一致就行
             channelMask,    // 立体声（前左前右）
-            endianness      // 结束标志
+            endianness      // 大小端
     };
     // 发送端
     SLDataSource slDataSource = {&android_queue, &pcm};
@@ -211,6 +210,8 @@ void releaseVoice() {
     if (playerObject != nullptr) {
         (*playerObject)->Destroy(playerObject);
         playerObject = nullptr;
+        playerPlay = nullptr;
+        bufferQueue = nullptr;
     }
     // 释放混音器对象和资源
     if (outputMixObject != nullptr) {

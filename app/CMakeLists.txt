@@ -13,6 +13,7 @@ add_library(
         # 代码源文件
         src/main/cpp/JniLoad.cpp
         src/main/cpp/VoicePlayer.cpp
+        src/main/cpp/VoiceRecorder.cpp
 )
 
 # 声明需要链接的库，起别名

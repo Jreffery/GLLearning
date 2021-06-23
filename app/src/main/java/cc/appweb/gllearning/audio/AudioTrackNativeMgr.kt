@@ -19,8 +19,7 @@ object AudioTrackNativeMgr {
     private var mPendingPlayItem: PlayItem? = null
 
     init {
-        // 加载voice库
-        System.loadLibrary("voice")
+        VoiceLibLoader.tryLoad()
     }
 
     /**

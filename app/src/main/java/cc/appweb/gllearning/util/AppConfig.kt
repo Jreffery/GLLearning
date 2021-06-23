@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 object AppConfig {
 
     const val KEY_NATIVE_AUDIO_PLAYER_SWITCH = "key_native_audio_player_switch"
+    const val KEY_NATIVE_AUDIO_RECORDER_SWITCH = "key_native_audio_recorder_switch"
 
     private lateinit var mPerf: SharedPreferences
 

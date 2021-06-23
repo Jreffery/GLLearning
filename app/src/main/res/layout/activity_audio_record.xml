@@ -25,6 +25,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/recorder_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="native recorder，重进界面才生效"/>
+
         <Button
             android:layout_marginTop="10dp"
             android:id="@+id/start_play_audio"

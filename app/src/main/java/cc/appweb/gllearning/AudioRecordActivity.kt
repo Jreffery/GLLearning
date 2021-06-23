@@ -13,7 +13,9 @@ import android.view.View
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import cc.appweb.gllearning.audio.AudioRecordNativeMgr
 import cc.appweb.gllearning.databinding.ActivityAudioRecordBinding
+import cc.appweb.gllearning.util.AppConfig
 import cc.appweb.gllearning.util.StorageUtil
 import java.io.File
 import java.io.FileOutputStream
@@ -47,6 +49,32 @@ class AudioRecordActivity : AppCompatActivity(), View.OnClickListener {
      * */
     private var mReadBufferSize = 1024
 
+    /**
+     * 是否使用native录音
+     * */
+    private var mUsingNativeRecorder = false
+
+    private var mNativeRecorderListener = object: AudioRecordNativeMgr.IRecordListener {
+        override fun onStart() {
+            mActivityBinding.audioRecordContainer.post {
+                mRecordStatus = RECORD_STATUS_OPENED
+                mActivityBinding.recordView.isEnabled = true
+                mActivityBinding.recordView.text = "停止录音"
+                Toast.makeText(this@AudioRecordActivity, "录音开始", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        override fun onStop() {
+            mActivityBinding.audioRecordContainer.post {
+                mRecordStatus = RECORD_STATUS_STOPPED
+                mActivityBinding.recordView.isEnabled = true
+                mActivityBinding.recordView.text = "开始录音"
+                Toast.makeText(this@AudioRecordActivity, "录音结束", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    }
+
     companion object {
         const val TAG = "TAG_AudioRecord"
         const val AUDIO_RECORD_PERMISSION_RESULT = 1
@@ -69,6 +97,15 @@ class AudioRecordActivity : AppCompatActivity(), View.OnClickListener {
         mActivityBinding = ActivityAudioRecordBinding.bind(findViewById(R.id.audio_record_container))
         mActivityBinding.recordView.setOnClickListener(this)
         mActivityBinding.startPlayAudio.setOnClickListener(this)
+
+        mUsingNativeRecorder = AppConfig.getBoolean(AppConfig.KEY_NATIVE_AUDIO_RECORDER_SWITCH, false)
+        mActivityBinding.recorderSwitch.setOnCheckedChangeListener { _, isChecked ->
+            AppConfig.putBoolean(AppConfig.KEY_NATIVE_AUDIO_RECORDER_SWITCH, isChecked)
+        }
+        mActivityBinding.recorderSwitch.isChecked = mUsingNativeRecorder
+        if (mUsingNativeRecorder) {
+            AudioRecordNativeMgr.addRecordListener(mNativeRecorderListener)
+        }
     }
 
     override fun onClick(v: View?) {
@@ -109,6 +146,9 @@ class AudioRecordActivity : AppCompatActivity(), View.OnClickListener {
     override fun onDestroy() {
         super.onDestroy()
         closeRecord()
+        if (mUsingNativeRecorder) {
+            AudioRecordNativeMgr.removeRecordListener(mNativeRecorderListener)
+        }
     }
 
     private fun startRecord() {
@@ -120,54 +160,69 @@ class AudioRecordActivity : AppCompatActivity(), View.OnClickListener {
             return
         }
 
-        // 开始前检查录音实例
-        mAudioRecord?.let {
-            it.stop()
-            mAudioRecord = null
-        }
-
-        val minBufferSize = AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
-        // 创建录音AudioRecord实例
-        // @param audioSource 录音来源，MIC 麦克风
-        // @param sampleRateInHz 采样率 通用 44100
-        // @param channelConfig 声道个数  CHANNEL_IN_MONO 单声道，CHANNEL_IN_STEREO 双声道立体声
-        // @param audioFormat 采样位数
-        // @param bufferSizeInBytes 音频录制的缓冲区大小
-        mAudioRecord = AudioRecord(MediaRecorder.AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT, minBufferSize * 5)
-        Log.i(TAG, "minBufferSize=${minBufferSize}")
-
-        // 读取数据的buffer，不要太大太小
-        mReadBufferSize = minBufferSize / 3
-        if (mAudioRecord!!.state == AudioRecord.STATE_INITIALIZED) {
-            mRecordThread = AudioRecordThread().apply {
+        if (mUsingNativeRecorder) {
+            if (mRecordStatus == RECORD_STATUS_STOPPED) {
                 mRecordStatus = RECORD_STATUS_CHECKING
                 mActivityBinding.recordView.isEnabled = false
-                start()
-                Toast.makeText(this@AudioRecordActivity, "录音开始", Toast.LENGTH_SHORT).show()
+                AudioRecordNativeMgr.startRecord(StorageUtil.getFile("${StorageUtil.PATH_LEARNING_VOICE + File.separator}voice_${System.currentTimeMillis()}n.pcm").absolutePath)
             }
         } else {
-            Toast.makeText(this, "录音初始化失败", Toast.LENGTH_SHORT).show()
+            // 开始前检查录音实例
+            mAudioRecord?.let {
+                it.stop()
+                mAudioRecord = null
+            }
+            val minBufferSize = AudioRecord.getMinBufferSize(44100, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+            // 创建录音AudioRecord实例
+            // @param audioSource 录音来源，MIC 麦克风
+            // @param sampleRateInHz 采样率 通用 44100
+            // @param channelConfig 声道个数  CHANNEL_IN_MONO 单声道，CHANNEL_IN_STEREO 双声道立体声
+            // @param audioFormat 采样位数
+            // @param bufferSizeInBytes 音频录制的缓冲区大小
+            mAudioRecord = AudioRecord(MediaRecorder.AudioSource.MIC, 44100, AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT, minBufferSize * 5)
+            Log.i(TAG, "minBufferSize=${minBufferSize}")
+
+            // 读取数据的buffer，不要太大太小
+            mReadBufferSize = minBufferSize / 3
+            if (mAudioRecord!!.state == AudioRecord.STATE_INITIALIZED) {
+                mRecordThread = AudioRecordThread().apply {
+                    mRecordStatus = RECORD_STATUS_CHECKING
+                    mActivityBinding.recordView.isEnabled = false
+                    start()
+                    Toast.makeText(this@AudioRecordActivity, "录音开始", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "录音初始化失败", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     private fun closeRecord() {
-        mAudioRecord?.let {
-            mRecordStatus = RECORD_STATUS_CHECKING
-            mActivityBinding.recordView.isEnabled = false
-            mAudioRecord = null
-
-            if (it.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
-                // 停止采集
-                it.stop()
+        if (mUsingNativeRecorder) {
+            if (mRecordStatus == RECORD_STATUS_OPENED) {
+                mRecordStatus = RECORD_STATUS_CHECKING
+                mActivityBinding.recordView.isEnabled = false
+                AudioRecordNativeMgr.stopRecord()
             }
+        } else {
+            mAudioRecord?.let {
+                mRecordStatus = RECORD_STATUS_CHECKING
+                mActivityBinding.recordView.isEnabled = false
+                mAudioRecord = null
 
-            mRecordThread?.let { itt ->
-                // 停止采集线程
-                itt.mCanRunning = false
-                mRecordThread = null
+                if (it.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                    // 停止采集
+                    it.stop()
+                }
+
+                mRecordThread?.let { itt ->
+                    // 停止采集线程
+                    itt.mCanRunning = false
+                    mRecordThread = null
+                }
+                Toast.makeText(this, "录音结束", Toast.LENGTH_SHORT).show()
             }
-            Toast.makeText(this, "录音结束", Toast.LENGTH_SHORT).show()
         }
     }
 
