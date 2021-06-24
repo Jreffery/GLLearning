@@ -48,9 +48,19 @@
         android:text="API2+TextureView"/>
 
     <Button
-        android:id="@+id/audio_record"
+        android:id="@+id/camerax"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@id/camera2_textureview"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CameraX API"/>
+
+    <Button
+        android:id="@+id/audio_record"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/camerax"
         android:layout_marginTop="10dp"
         android:layout_marginLeft="10dp"
         android:layout_width="wrap_content"

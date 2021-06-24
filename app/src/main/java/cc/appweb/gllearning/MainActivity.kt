@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         mActivityBinding = ActivityMainBinding.bind(findViewById(R.id.activity_main_container))
         mActivityBinding.camera1Surfaceview.setOnClickListener(this)
         mActivityBinding.camera1Glsurfaceview.setOnClickListener(this)
+        mActivityBinding.camerax.setOnClickListener(this)
         mActivityBinding.camera1Textureview.setOnClickListener(this)
         mActivityBinding.camera2Textureview.setOnClickListener(this)
         mActivityBinding.audioRecord.setOnClickListener(this)
@@ -62,6 +63,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             mActivityBinding.camera2Textureview -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     startActivity(Intent(this, API2TextureViewActivity::class.java))
+                }
+            }
+            mActivityBinding.camerax -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    startActivity(Intent(this, CameraXActivity::class.java))
                 }
             }
             mActivityBinding.audioRecord -> {
