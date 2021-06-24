@@ -294,7 +294,10 @@ class API1SurfaceViewActivity : AppCompatActivity(), View.OnClickListener {
                 Log.i(TAG, "PictureSize width=$picW height=$picH")
                 parameters.setPictureSize(picW, picH)
                 // 自动对焦模式
-                parameters.focusMode = Camera.Parameters.FOCUS_MODE_AUTO
+                val supportedFocusModes = parameters.supportedFocusModes
+                if (supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                    parameters.focusMode = Camera.Parameters.FOCUS_MODE_AUTO
+                }
                 // 使参数生效
                 itt.parameters = parameters
                 // 通过SurfaceView显示预览
