@@ -24,6 +24,8 @@ import cc.appweb.gllearning.util.StorageUtil
 
 /**
  * 播放音频
+ * 1. Java层使用AudioTrack
+ * 2. Native使用OpenSL
  * */
 class PlayAudioActivity : AppCompatActivity() {
 

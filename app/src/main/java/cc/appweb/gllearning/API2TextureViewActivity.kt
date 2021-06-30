@@ -27,7 +27,9 @@ import kotlin.math.abs
 
 /**
  * Camera API2 和 TextureView实现预览、拍照、录制
- *
+ * 1. 比Camera1，Camera2加入了Session与回调线程的特性
+ * 2. 在创建session时需要提供后续操作的所有目的Output Surface
+ * 3. setRepeatingRequest(预览) capture(拍照)都需要选定上述的部分Surface作为output
  * */
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
@@ -363,7 +365,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
             captureBuilder.addTarget(mImageReader!!.surface)
             captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE) // 自动对焦
             captureBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON)
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, 270)
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, if (mCameraFacing == CameraCharacteristics.LENS_FACING_FRONT) 270 else 90)
             mCameraCaptureSession?.apply {
                 stopRepeating()
                 capture(captureBuilder.build(), object : CameraCaptureSession.CaptureCallback() {

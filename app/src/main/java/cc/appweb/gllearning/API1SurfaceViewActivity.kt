@@ -20,7 +20,13 @@ import java.io.FileOutputStream
 import kotlin.math.abs
 
 /**
- * Camera API1和SurfaceView组合实现相机预览功能
+ * Camera API1和SurfaceView组合实现相机预览、拍照功能
+ * 1. SurfaceView的需要通过SurfaceHolder添加Callback来获悉Surface的创建
+ * 2. 打开对应相机需要遍历设备上所有可使用的相机并匹配facing
+ * 3. 通过相机id得到对应相机基础属性与打开相机得到相机抽象对象
+ * 4. 通过对象设置相应的相机参数（帧率、预览/拍照分辨率、对焦模式、各种callback）、预览SurfaceHolder
+ * 5. startPreview开启预览
+ * 6. 先autoFocus再takePicture
  * */
 class API1SurfaceViewActivity : AppCompatActivity(), View.OnClickListener {
 
@@ -149,7 +155,7 @@ class API1SurfaceViewActivity : AppCompatActivity(), View.OnClickListener {
                                         Toast.makeText(this, "保存失败", Toast.LENGTH_SHORT).show()
                                     }
                                 }.start()
-                            }?: Toast.makeText(this, "拍照失败", Toast.LENGTH_SHORT).show()
+                            } ?: Toast.makeText(this, "拍照失败", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -324,7 +330,7 @@ class API1SurfaceViewActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun switchCamera() {
         closeCamera()
-        mFacing =  if (mFacing == Camera.CameraInfo.CAMERA_FACING_FRONT) Camera.CameraInfo.CAMERA_FACING_BACK else Camera.CameraInfo.CAMERA_FACING_FRONT
+        mFacing = if (mFacing == Camera.CameraInfo.CAMERA_FACING_FRONT) Camera.CameraInfo.CAMERA_FACING_BACK else Camera.CameraInfo.CAMERA_FACING_FRONT
         openCamera()
     }
 

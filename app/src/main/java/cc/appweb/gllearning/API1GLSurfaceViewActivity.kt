@@ -14,7 +14,12 @@ import androidx.core.content.ContextCompat
 import cc.appweb.gllearning.databinding.ActivityApi1GlsurfaceviewBinding
 import kotlin.math.abs
 
-
+/**
+ * 使用GLSurfaceView作为预览控件
+ * 1. GLSurfaceView内部创建一个OpenGL TextureId并包装成SurfaceTexture
+ * 2. 预览产生纹理触发SurfaceTexture回调
+ * 3. 调用OpenGL渲染该Texture到EGL上
+ * */
 class API1GLSurfaceViewActivity : AppCompatActivity(), View.OnClickListener {
 
     companion object {

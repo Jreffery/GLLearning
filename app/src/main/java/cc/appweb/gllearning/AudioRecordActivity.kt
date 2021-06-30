@@ -22,7 +22,8 @@ import java.io.FileOutputStream
 
 /**
  * 录音Activity
- *
+ * 1. Java层使用AudioRecord API
+ * 2. Native使用OpenSL
  * */
 class AudioRecordActivity : AppCompatActivity(), View.OnClickListener {
 
@@ -54,7 +55,7 @@ class AudioRecordActivity : AppCompatActivity(), View.OnClickListener {
      * */
     private var mUsingNativeRecorder = false
 
-    private var mNativeRecorderListener = object: AudioRecordNativeMgr.IRecordListener {
+    private var mNativeRecorderListener = object : AudioRecordNativeMgr.IRecordListener {
         override fun onStart() {
             mActivityBinding.audioRecordContainer.post {
                 mRecordStatus = RECORD_STATUS_OPENED

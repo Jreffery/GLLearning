@@ -22,7 +22,6 @@ class CameraGLSurfaceView(context: Context, attributesSet: AttributeSet)
         const val TAG = "CameraGLSurfaceView"
     }
 
-
     // 纹理id
     private var mTextureId: Int = 0
     // 表面纹理

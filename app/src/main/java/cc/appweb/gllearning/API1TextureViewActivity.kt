@@ -16,6 +16,7 @@ import kotlin.math.abs
 
 /**
  * 使用TextureView作为预览控件
+ * Camera对象支持以TextureView的SurfaceTexture作为预览
  *
  * */
 class API1TextureViewActivity : AppCompatActivity(), View.OnClickListener {

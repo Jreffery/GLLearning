@@ -17,6 +17,9 @@ import cc.appweb.gllearning.mediacodec.IPlayListener
 import cc.appweb.gllearning.mediacodec.VideoDecodePlayer
 import cc.appweb.gllearning.util.StorageUtil
 
+/**
+ * 播放使用录制功能录制的视频
+ * */
 class MediaCodecActivity : AppCompatActivity() {
 
     private lateinit var mActivityBinding: ActivityMediaCodecBinding
