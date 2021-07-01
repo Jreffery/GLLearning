@@ -15,6 +15,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import cc.appweb.gllearning.databinding.ActivityCameraXBinding
 import cc.appweb.gllearning.util.StorageUtil
+import com.permissionx.guolindev.PermissionX
+import com.permissionx.guolindev.callback.RequestCallback
 import java.io.File
 import java.nio.ByteBuffer
 import java.util.concurrent.ExecutorService
@@ -54,12 +56,17 @@ class CameraXActivity : AppCompatActivity() {
         binding = ActivityCameraXBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 申请相机权限
-        if (allPermissionsGranted()) {
-            startCamera()
-        } else {
-            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
-        }
+        PermissionX.init(this)
+            .permissions(*REQUIRED_PERMISSIONS)
+            .request { allGranted, _, _ ->
+                if (allGranted) {
+                    startCamera()
+                    return@request
+                }
+                Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT)
+                    .show()
+                finish()
+            }
 
         binding.cameraCaptureButton.setOnClickListener { takePhoto() }
         imageAnalysisExecutor = Executors.newSingleThreadExecutor()
@@ -170,32 +177,8 @@ class CameraXActivity : AppCompatActivity() {
         }
     }
 
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         imageAnalysisExecutor.shutdown()
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (allPermissionsGranted()) {
-                startCamera()
-            } else {
-                Toast.makeText(
-                    this,
-                    "Permissions not granted by the user.",
-                    Toast.LENGTH_SHORT
-                ).show()
-                finish()
-            }
-        }
     }
 }

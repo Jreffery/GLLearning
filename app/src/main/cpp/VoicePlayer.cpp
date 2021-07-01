@@ -152,7 +152,7 @@ void playVoice(const char *pcmFilePath, SLuint32 numChannels, SLuint32 samplesPe
     SLDataSink audioSnk = {&outputMix, nullptr};
 
     // 设置pcm格式的频率位数等信息并创建播放器
-    SLDataLocator_AndroidSimpleBufferQueue android_queue={SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,2};
+    SLDataLocator_AndroidSimpleBufferQueue android_queue={SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,1};
     // PCM 配置类型
     SLDataFormat_PCM pcm={
             SL_DATAFORMAT_PCM,//播放pcm格式的数据

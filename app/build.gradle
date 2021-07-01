@@ -67,6 +67,9 @@ dependencies {
     implementation "androidx.camera:camera-lifecycle:$camerax_version"
     // CameraX View
     implementation "androidx.camera:camera-view:1.0.0-alpha24"
+    // 简化权限申请操作
+    implementation 'com.permissionx.guolindev:permissionx:1.4.0'
+
 }
 repositories {
     mavenCentral()
