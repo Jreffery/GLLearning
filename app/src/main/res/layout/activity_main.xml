@@ -1,90 +1,107 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main_container"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/camera1_surfaceview"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="10dp"
-        android:layout_marginLeft="10dp"
-        android:layout_width="wrap_content"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="API1+SurfaceView"/>
+        tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/camera1_glsurfaceview"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/camera1_surfaceview"
-        android:layout_marginTop="10dp"
-        android:layout_marginLeft="10dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="API1+GLSurfaceView"/>
+        <Button
+            android:id="@+id/camera1_surfaceview"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="API1+SurfaceView"/>
 
-    <Button
-        android:id="@+id/camera1_textureview"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/camera1_glsurfaceview"
-        android:layout_marginTop="10dp"
-        android:layout_marginLeft="10dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="API1+TextureView"/>
+        <Button
+            android:id="@+id/camera1_glsurfaceview"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/camera1_surfaceview"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="API1+GLSurfaceView"/>
 
-    <Button
-        android:id="@+id/camera2_textureview"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/camera1_textureview"
-        android:layout_marginTop="10dp"
-        android:layout_marginLeft="10dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="API2+TextureView"/>
+        <Button
+            android:id="@+id/camera1_textureview"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/camera1_glsurfaceview"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="API1+TextureView"/>
 
-    <Button
-        android:id="@+id/camerax"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/camera2_textureview"
-        android:layout_marginTop="10dp"
-        android:layout_marginLeft="10dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="CameraX API"/>
+        <Button
+            android:id="@+id/camera2_textureview"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/camera1_textureview"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="API2+TextureView"/>
 
-    <Button
-        android:id="@+id/audio_record"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/camerax"
-        android:layout_marginTop="10dp"
-        android:layout_marginLeft="10dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="AudioRecord"/>
+        <Button
+            android:id="@+id/camerax"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/camera2_textureview"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CameraX API"/>
 
-    <Button
-        android:id="@+id/play_audio"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/audio_record"
-        android:layout_marginTop="10dp"
-        android:layout_marginLeft="10dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="PlayAudio"/>
+        <Button
+            android:id="@+id/audio_record"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/camerax"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AudioRecord"/>
 
-    <Button
-        android:id="@+id/media_codec"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/play_audio"
-        android:layout_marginTop="10dp"
-        android:layout_marginLeft="10dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="MediaCodec+Player"/>
+        <Button
+            android:id="@+id/play_audio"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/audio_record"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PlayAudio"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <Button
+            android:id="@+id/video_codec"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/play_audio"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VideoCodec+Player"/>
+
+        <Button
+            android:id="@+id/audio_codec"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/video_codec"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AudioCodec"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>
+

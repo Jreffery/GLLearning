@@ -6,13 +6,23 @@ class StorageUtil {
 
     companion object {
 
+        // 总目录
         private const val PATH_LEARNING = "learning"
 
+        // 拍照后保存图片的目录
         val PATH_LEARNING_PIC = PATH_LEARNING + File.separator + "picture"
 
+        // 录音后保存pcm文件的目录
         val PATH_LEARNING_VOICE = PATH_LEARNING + File.separator + "voice"
 
+        // 视频录制后保存的目录
         val PATH_LEARNING_MP4 = PATH_LEARNING + File.separator + "mp4"
+
+        // pcm编码成aac文件保存的目录
+        val PATH_LEARNING_AAC = PATH_LEARNING + File.separator + "aac"
+
+        // 音频封装文件
+        val PATH_LEARNING_M4A = PATH_LEARNING + File.separator + "m4a"
 
         fun getFile(relativePath: String): File {
             val path = relativePath.split(File.separator)

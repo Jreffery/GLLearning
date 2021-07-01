@@ -10,6 +10,7 @@
 
 /**
  * 开始录音
+ * @param filepath 保存录音文件的路径
  * @param endianness 大小端
  * */
 void startRecord(const char *filepath, SLuint32 endianness);

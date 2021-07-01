@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="cc.appweb.gllearning">
+    package="cc.appweb.gllearning"> <!-- 声明应用需要使用Open GL 2.0 -->
+    <uses-sdk tools:overrideLibrary="androidx.camera.view, androidx.camera.camera2,      androidx.camera.lifecycle, androidx.camera.core" />
     <!-- 使用相机需要申请相机权限  / -->
     <uses-permission android:name="android.permission.CAMERA" /> <!-- 保存图片需要读取权限 -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> <!-- 录音权限 -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" /> <!-- opensl es 混音器效果 -->
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" /> <!-- 声明应用需要使用Open GL 2.0 -->
-    <uses-sdk tools:overrideLibrary="androidx.camera.view, androidx.camera.camera2,
-     androidx.camera.lifecycle, androidx.camera.core"/>
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <uses-feature
         android:glEsVersion="0x00020000"
@@ -23,7 +22,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.GLLearning">
-        <activity android:name=".MediaCodecActivity" />
+        <activity android:name=".AudioCodecActivity"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait" />
+        <activity android:name=".MediaCodecActivity"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".PlayAudioActivity"
             android:launchMode="singleTop"
