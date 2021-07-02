@@ -29,14 +29,17 @@ static bool mRecording = false; // 正在录音状态
 static std::mutex mtx;
 
 static void ready2Stop() {
+    // 释放堆内存
     if (recordFilePath != nullptr) {
         delete recordFilePath;
         recordFilePath = nullptr;
     }
+    // 释放缓存空间内存
     if (dataReceived != nullptr) {
         delete dataReceived;
         dataReceived = nullptr;
     }
+    // 关闭文件
     if (recordFile != nullptr) {
         fclose(recordFile);
         recordFile = nullptr;
@@ -64,7 +67,7 @@ static void recordCallback(SLAndroidSimpleBufferQueueItf bufferQueue, void *pCon
     if (mRecording) {
         SLuint32 result;
         SLAndroidSimpleBufferQueueState state;
-        // 获取已录入的数据size
+        // 获取当前录音器的状态
         result = (*bufferQueue)->GetState(bufferQueue, &state);
         LOGD(TAG, "bufferQueue getState count=%d, index=%d, result=%d", state.count, state.index,
              result);
@@ -197,6 +200,7 @@ void stopRecord() {
     if (recordItf != nullptr) {
         SLuint32 result;
         mRecording = false;
+        // 使录音器进入Stopped状态
         result = (*recordItf)->SetRecordState(recordItf, SL_RECORDSTATE_STOPPED);
         LOGD(TAG, "recordItf SetRecordState result=%d", result);
         ready2Stop();

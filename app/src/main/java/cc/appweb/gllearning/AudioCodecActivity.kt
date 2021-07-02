@@ -1,6 +1,7 @@
 package cc.appweb.gllearning
 
 import android.graphics.Color
+import android.media.AudioFormat
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import cc.appweb.gllearning.databinding.ActivityAudioCodecBinding
+import cc.appweb.gllearning.mediacodec.AudioAACCodec
 import cc.appweb.gllearning.util.DensityUtil
 import cc.appweb.gllearning.util.StorageUtil
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -46,6 +48,7 @@ class AudioCodecActivity : AppCompatActivity() {
             ListDataItem(0, VIEW_TYPE_TITLE, "AAC文件", ""),
             ListDataItem(0, VIEW_TYPE_TITLE, "M4A文件", ""))
 
+    // loading的dialog
     private var mLoadingDialog: AlertDialog? = null
 
     companion object {
@@ -74,6 +77,7 @@ class AudioCodecActivity : AppCompatActivity() {
         })
         mActivityBinding.recycleView.adapter = SectionAdapter()
 
+        // 加载文件列表
         loadFilesData()
     }
 
@@ -85,10 +89,10 @@ class AudioCodecActivity : AppCompatActivity() {
                 // load .pcm 文件
                 val pcm = mutableListOf<ListDataItem>()
                 innerLoad(0, StorageUtil.getFile(StorageUtil.PATH_LEARNING_VOICE), FILE_TYPE_PCM, ".pcm", pcm)
-                // load .aac
+                // load .aac 文件
                 val aac = mutableListOf<ListDataItem>()
                 innerLoad(1, StorageUtil.getFile(StorageUtil.PATH_LEARNING_AAC), FILE_TYPE_AAC, ".aac", aac)
-                // load .m4a
+                // load .m4a 文件
                 val m4a = mutableListOf<ListDataItem>()
                 innerLoad(2, StorageUtil.getFile(StorageUtil.PATH_LEARNING_M4A), FILE_TYPE_M4A, ".m4a", m4a)
                 // 更新操作
@@ -144,10 +148,12 @@ class AudioCodecActivity : AppCompatActivity() {
             val holder = TextViewHolder(bigTextView)
             bigTextView.ellipsize = TextUtils.TruncateAt.END
             if (viewType == VIEW_TYPE_TITLE) {
+                // 标题栏
                 bigTextView.setTextColor(Color.parseColor("#ee000000"))
                 bigTextView.textSize = 18f
                 bigTextView.setPadding(DensityUtil.dp2px(5f), DensityUtil.dp2px(5f), 0, DensityUtil.dp2px(5f))
             } else {
+                // 文件栏
                 bigTextView.setTextColor(Color.parseColor("#88000000"))
                 bigTextView.textSize = 15f
                 bigTextView.setPadding(DensityUtil.dp2px(10f), DensityUtil.dp2px(5f), 0, DensityUtil.dp2px(5f))
@@ -172,8 +178,10 @@ class AudioCodecActivity : AppCompatActivity() {
                             return@find it.name.startsWith(name)
                         }
                         aacFile?.let {
-                            Toast.makeText(this@AudioCodecActivity, "已经编码", Toast.LENGTH_SHORT).show()
+                            // 基于文件名判断是否已编码
+                            Toast.makeText(this@AudioCodecActivity, "该文件已经编码", Toast.LENGTH_SHORT).show()
                         } ?: let {
+                            // 弹出确认提示框
                             MaterialAlertDialogBuilder(this@AudioCodecActivity)
                                     .setTitle("音频编码")
                                     .setMessage("是否将${listData.name}以aac编码")
@@ -185,6 +193,24 @@ class AudioCodecActivity : AppCompatActivity() {
                                                 .setView(R.layout.loading_view)
                                                 .setCancelable(false)
                                                 .show()
+
+                                        // 开始编码，统一使用AudioRecordActivity的录音配置
+                                        AudioAACCodec(listData.path,
+                                                StorageUtil.getFile("${StorageUtil.PATH_LEARNING_AAC + File.separator + name}.aac").absolutePath,
+                                                1,
+                                                44100,
+                                                AudioFormat.CHANNEL_IN_MONO,
+                                                AudioFormat.ENCODING_PCM_16BIT).start {
+                                            Log.d(TAG, "aac encode ret=${this}")
+                                            mActivityBinding.root.post {
+                                                mLoadingDialog?.dismiss()
+                                                mLoadingDialog = null
+                                                if (this) {
+                                                    loadFilesData()
+                                                }
+                                            }
+                                        }
+
                                     }
                                     .setCancelable(false)
                                     .show()

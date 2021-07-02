@@ -20,7 +20,7 @@
 #define LOGW(TAG, args...) __android_log_print(ANDROID_LOG_WARN, TAG, ##args)
 #define LOGE(TAG, args...) __android_log_print(ANDROID_LOG_ERROR, TAG, ##args)
 
-#elif
+#else
 
 #define LOGD(TAG, args...)
 #define LOGI(TAG, args...)
