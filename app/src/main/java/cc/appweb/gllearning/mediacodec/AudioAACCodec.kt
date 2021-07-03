@@ -9,6 +9,8 @@ import java.nio.ByteBuffer
 
 /**
  * 使用MediaCodec把音频pcm数据编码成AAC格式
+ * AAC-LC模式每次输出都是以1024个采样点的编码容量输出
+ * 如果以44100频率采样的音频，则每帧编码音频的帧时长为1024/44100 * 1000 = 23.22ms
  *
  * @param pcmFilePath pcm文件路径
  * @param aacFilePath 编码aac文件路径
@@ -53,6 +55,10 @@ class AudioAACCodec(val pcmFilePath: String, val aacFilePath: String, val channe
             mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 96000)
             // 设置编码器输入缓存区最大size
             mediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, bufferSize)
+            // 设置编码位数
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                mediaFormat.setInteger(MediaFormat.KEY_PCM_ENCODING, audioFormat)
+            }
             // configure配置生效
             mediaCodec.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
             // 开启codec
@@ -120,12 +126,17 @@ class AudioAACCodec(val pcmFilePath: String, val aacFilePath: String, val channe
                     // 取出数据
                     Log.i(TAG, "output flag=${bufferInfo.flags} size=${bufferInfo.size} offset=${bufferInfo.offset}" +
                             " presentationTime=${bufferInfo.presentationTimeUs}")
-                    if (bufferInfo.flags != MediaCodec.BUFFER_FLAG_END_OF_STREAM) {
-                        val outputBuffer: ByteBuffer? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            mediaCodec.getOutputBuffer(outputBufferIndex)
-                        } else {
-                            mediaCodec.outputBuffers[outputBufferIndex]
-                        }
+
+                    val outputBuffer: ByteBuffer? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        mediaCodec.getOutputBuffer(outputBufferIndex)
+                    } else {
+                        mediaCodec.outputBuffers[outputBufferIndex]
+                    }
+                    if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG > 0) {
+                        // csd 编码器配置数据
+                        Log.i(TAG, "aac csd ${outputBuffer!!.get()} ${outputBuffer.get()}")
+                    } else if (bufferInfo.size > 0) {
+
                         // 填入ADTS header
                         aacFile.write(addADTStoPacket(7 + bufferInfo.size))
                         // 从输出缓存区中读取数据
@@ -134,12 +145,8 @@ class AudioAACCodec(val pcmFilePath: String, val aacFilePath: String, val channe
                         // 填入编码数据
                         aacFile.write(outputCacheBuffer, 0, outputBuffer.limit())
                         aacFile.flush()
-
-                        // 释放输出缓存区给Codec
-                        mediaCodec.releaseOutputBuffer(outputBufferIndex, false)
-                        // 继续取出可用输出区，至多等待5毫秒每次
-                        outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 5 * 1000)
-                    } else {
+                    }
+                    if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) > 0) {
                         // 输出已完成
                         mIsEnd = true
                         outputBufferIndex = -1
@@ -150,6 +157,12 @@ class AudioAACCodec(val pcmFilePath: String, val aacFilePath: String, val channe
                         aacFile.close()
                         // 回调编码已完成
                         callback.invoke(true)
+                        Log.i(TAG, "aac encode finish!")
+                    } else {
+                        // 释放输出缓存区给Codec
+                        mediaCodec.releaseOutputBuffer(outputBufferIndex, false)
+                        // 继续取出可用输出区，至多等待5毫秒每次
+                        outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 5 * 1000)
                     }
                 }
             }
@@ -161,6 +174,7 @@ class AudioAACCodec(val pcmFilePath: String, val aacFilePath: String, val channe
          * @param packetLen 数据长度，包含头部的7字节
          */
         fun addADTStoPacket(packetLen: Int): ByteArray {
+            Log.i(TAG, "addADTStoPacket packetLen=$packetLen")
             val adts = ByteArray(7) // 固定为7字节
             val profile = 2 // AAC LC
             val freqIdx = 4 // 44100 根据不同的采样率修改这个值

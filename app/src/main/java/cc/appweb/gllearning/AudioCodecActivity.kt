@@ -2,6 +2,7 @@ package cc.appweb.gllearning
 
 import android.graphics.Color
 import android.media.AudioFormat
+import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -14,6 +15,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import cc.appweb.gllearning.audio.AACWrapM4A
 import cc.appweb.gllearning.databinding.ActivityAudioCodecBinding
 import cc.appweb.gllearning.mediacodec.AudioAACCodec
 import cc.appweb.gllearning.util.DensityUtil
@@ -200,6 +202,51 @@ class AudioCodecActivity : AppCompatActivity() {
                                                 1,
                                                 44100,
                                                 AudioFormat.CHANNEL_IN_MONO,
+                                                AudioFormat.ENCODING_PCM_16BIT).start {
+                                            Log.d(TAG, "aac encode ret=${this}")
+                                            mActivityBinding.root.post {
+                                                mLoadingDialog?.dismiss()
+                                                mLoadingDialog = null
+                                                if (this) {
+                                                    loadFilesData()
+                                                }
+                                            }
+                                        }
+
+                                    }
+                                    .setCancelable(false)
+                                    .show()
+                        }
+                    } else if (type == FILE_TYPE_AAC) {
+                        // 版本限制
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                            return@setOnClickListener
+                        }
+                        val m4aFile = mM4aList.find {
+                            return@find it.name.startsWith(name)
+                        }
+                        m4aFile?.let {
+                            // 基于文件名判断是否已封装
+                            Toast.makeText(this@AudioCodecActivity, "该文件已经编码", Toast.LENGTH_SHORT).show()
+                        } ?: let {
+                            // 弹出确认提示框
+                            MaterialAlertDialogBuilder(this@AudioCodecActivity)
+                                    .setTitle("封装m4a")
+                                    .setMessage("是否将${listData.name}封装成m4a格式")
+                                    .setNegativeButton("取消", null)
+                                    .setPositiveButton("确定") { dialog, which ->
+                                        // 展示loading
+                                        mLoadingDialog?.dismiss()
+                                        mLoadingDialog = MaterialAlertDialogBuilder(this@AudioCodecActivity)
+                                                .setView(R.layout.loading_view)
+                                                .setCancelable(false)
+                                                .show()
+
+                                        // 开始封装，统一使用AudioRecordActivity的录音配置
+                                        AACWrapM4A(listData.path,
+                                                StorageUtil.getFile("${StorageUtil.PATH_LEARNING_M4A + File.separator + name}.m4a").absolutePath,
+                                                44100,
+                                                1,
                                                 AudioFormat.ENCODING_PCM_16BIT).start {
                                             Log.d(TAG, "aac encode ret=${this}")
                                             mActivityBinding.root.post {
