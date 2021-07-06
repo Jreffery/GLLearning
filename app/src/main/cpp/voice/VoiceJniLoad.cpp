@@ -155,24 +155,6 @@ void onRecordStop() {
 
 ///////////////////////////////////Voice Record End/////////////////////////////////////////////////
 
-
-// 动态注册jni函数
-static int registerNativeMethods(JNIEnv *env, const char *className, JNINativeMethod *methods,
-                                 int numMethods) {
-    LOGD(LOG_TAG, "registerNativeMethods, className=%s, numMethods=%d", className, numMethods);
-    jclass clazz = env->FindClass(className);
-    if (clazz == NULL) {
-        LOGE(LOG_TAG, "Native registration unable to find class %s", className);
-        return JNI_FALSE;
-    }
-    if (env->RegisterNatives(clazz, methods, numMethods) < 0) {
-        LOGE(LOG_TAG, "RegisterNatives failed for %s", className);
-        return JNI_FALSE;
-    }
-    LOGD(LOG_TAG, "RegisterNatives suceess for %s", className);
-    return JNI_TRUE;
-}
-
 // 该方法定义在jni.h，以extern "C" 导出为C格式的函数符号
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     LOGD(LOG_TAG, "JNI_OnLoad");

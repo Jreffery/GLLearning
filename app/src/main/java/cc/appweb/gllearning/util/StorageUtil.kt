@@ -24,6 +24,8 @@ class StorageUtil {
         // 音频封装文件
         val PATH_LEARNING_M4A = PATH_LEARNING + File.separator + "m4a"
 
+        val PATH_LEARNING_RAW = PATH_LEARNING + File.separator + "raw"
+
         fun getFile(relativePath: String): File {
             val path = relativePath.split(File.separator)
             var rootPath = AppUtil.getContext().getExternalFilesDir(null)!!.absolutePath

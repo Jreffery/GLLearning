@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         mActivityBinding.playAudio.setOnClickListener(this)
         mActivityBinding.videoCodec.setOnClickListener(this)
         mActivityBinding.audioCodec.setOnClickListener(this)
+        mActivityBinding.openGles.setOnClickListener(this)
         var permission = arrayOfNulls<String>(2)
         var index = 0
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -82,6 +83,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             }
             mActivityBinding.audioCodec -> {
                 startActivity(Intent(this, AudioCodecActivity::class.java))
+            }
+            mActivityBinding.openGles -> {
+                startActivity(Intent(this, OpenGLESActivity::class.java))
             }
         }
     }

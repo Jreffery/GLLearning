@@ -41,18 +41,18 @@ class TextureDrawer(private val mTextureId: Int) {
         // 顶点坐标数组，描述窗口的坐标
         @JvmStatic
         val squareCoordinates = floatArrayOf(
-                -1.0f,  1.0f,
-                -1.0f, -1.0f,
-                1.0f, -1.0f,
-                1.0f,  1.0f)
+                -1.0f,  1.0f,  // 左上
+                -1.0f, -1.0f,  // 左下
+                1.0f, -1.0f,   // 右下
+                1.0f,  1.0f)  // 右上
 
         // 纹理坐标数组，描述纹理的坐标，旋转0度时的坐标
         @JvmStatic
         val textureVertices = floatArrayOf(
-                1.0f, 1.0f,
-                1.0f, 0.0f,
-                0.0f, 0.0f,
-                0.0f, 1.0f,)
+                1.0f, 1.0f,  // 右上
+                1.0f, 0.0f,  // 右下
+                0.0f, 0.0f,  // 左下
+                0.0f, 1.0f,) // 左上
 
         // 顶点绘制顺序
         @JvmStatic

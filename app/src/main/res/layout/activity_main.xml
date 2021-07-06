@@ -101,6 +101,16 @@
             android:layout_height="wrap_content"
             android:text="AudioCodec"/>
 
+        <Button
+            android:id="@+id/open_gles"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/audio_codec"
+            android:layout_marginTop="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="OpenGLES"/>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </ScrollView>
