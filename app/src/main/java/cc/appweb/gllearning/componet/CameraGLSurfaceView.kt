@@ -8,6 +8,7 @@ import android.opengl.GLSurfaceView
 import android.util.AttributeSet
 import android.util.Log
 import androidx.annotation.MainThread
+import java.lang.StringBuilder
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -38,8 +39,11 @@ class CameraGLSurfaceView(context: Context, attributesSet: AttributeSet)
     // Preview use mirror
     private var mPreviewMirror: Boolean
 
+    // transform matrix
+    private val mTransformMatrix = FloatArray(16)
+
     init {
-        // 使用适配OpenGL ES 2.0的EGL版本
+        // 使用EGL 2.0版本
         setEGLContextClientVersion(2)
         // 设置渲染器，同时开启内部GLThread线程，回调在GLThread线程
         setRenderer(this)
@@ -81,7 +85,6 @@ class CameraGLSurfaceView(context: Context, attributesSet: AttributeSet)
     }
 
     override fun onDrawFrame(gl: GL10?) {
-        Log.i(TAG, "onDrawFrame")
         // 以rgba来清空缓冲区当前的所有颜色
         GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f)
         // 以glClearColor设置的值来清除颜色缓冲以及深度缓冲
@@ -90,8 +93,12 @@ class CameraGLSurfaceView(context: Context, attributesSet: AttributeSet)
         // 从图像流中将纹理图像更新为最新的帧
         // 当updateTexImage()被调用时，SurfaceTexture对象所关联的OpenGLES中纹理对象的内容将被更新为Image Stream中最新的图片
         mSurfaceTexture!!.updateTexImage()
-        val transformMatrix = FloatArray(16)
-        mSurfaceTexture!!.getTransformMatrix(transformMatrix)
+        mSurfaceTexture!!.getTransformMatrix(mTransformMatrix)
+        val strMatrix = StringBuilder()
+        for (index in mTransformMatrix) {
+            strMatrix.append(index).append(" ")
+        }
+        Log.i(TAG, "onDrawFrame mTransformMatrix $strMatrix")
         // 调用绘制
         mDrawer!!.draw()
     }
@@ -142,9 +149,7 @@ class CameraGLSurfaceView(context: Context, attributesSet: AttributeSet)
     fun setPreviewOrientation(orientation: Int, mirror: Boolean) {
         if (orientation == 0 || orientation == 90 || orientation == 180 || orientation == 270) {
             mPreviewOrientation = orientation
-            mDrawer?.let {
-                it.setPreviewOrientation(orientation, mirror)
-            }
+            mDrawer?.setPreviewOrientation(orientation, mirror)
         }
     }
 
