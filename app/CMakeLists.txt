@@ -11,9 +11,9 @@ add_library(
         # 库的类型，动态库
         SHARED
         # 代码源文件
-        src/main/cpp/JniLoad.cpp
-        src/main/cpp/VoicePlayer.cpp
-        src/main/cpp/VoiceRecorder.cpp
+        src/main/cpp/voice/VoiceJniLoad.cpp
+        src/main/cpp/voice/VoicePlayer.cpp
+        src/main/cpp/voice/VoiceRecorder.cpp
 )
 
 # 声明需要链接的库，起别名
