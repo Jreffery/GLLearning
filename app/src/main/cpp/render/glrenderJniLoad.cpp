@@ -82,3 +82,11 @@ static void jni_destroy(JNIEnv *env, jobject obj, jlong ptr) {
     render->DestroyGlesEnv();
     delete (BgRender *)ptr;
 }
+
+// 区别其他native方法，该方法使用静态注册
+extern "C" JNIEXPORT void JNICALL
+Java_cc_appweb_gllearning_componet_BgRender_setRotate(JNIEnv *env, jobject thiz, jlong ptr, jint type) {
+    LOGD(LOG_TAG, "setRotate");
+    BgRender* render = (BgRender *) ptr;
+    render->SetRotate(type);
+}

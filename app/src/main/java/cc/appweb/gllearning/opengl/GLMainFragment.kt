@@ -22,6 +22,7 @@ class GLMainFragment : Fragment(), View.OnClickListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         mFragmentBinding.eglRender.setOnClickListener(this)
+        mFragmentBinding.glRotate.setOnClickListener(this)
     }
 
     override fun onClick(v: View?) {
@@ -29,6 +30,13 @@ class GLMainFragment : Fragment(), View.OnClickListener {
             mFragmentBinding.eglRender -> {
                 fragmentManager!!.beginTransaction().apply {
                     replace(R.id.fragment_container, EGLFragment())
+                    addToBackStack(null)
+                    commit()
+                }
+            }
+            mFragmentBinding.glRotate -> {
+                fragmentManager!!.beginTransaction().apply {
+                    replace(R.id.fragment_container, RotateFragment())
                     addToBackStack(null)
                     commit()
                 }

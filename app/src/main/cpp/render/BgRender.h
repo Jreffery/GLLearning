@@ -8,6 +8,11 @@
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
 
+#define ROTATE_0 0
+#define ROTATE_90 1
+#define ROTATE_180 2
+#define ROTATE_270 3
+
 /**
  * 背景渲染器
  * */
@@ -67,6 +72,9 @@ public:
 
     // 开始渲染
     void Draw();
+
+    // 设置旋转角度
+    void SetRotate(int type);
 
     // 销毁OpenGL ES运行环境
     void DestroyGlesEnv();
