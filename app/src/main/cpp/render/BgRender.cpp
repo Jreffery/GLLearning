@@ -24,9 +24,10 @@ BgRender::BgRender(unsigned int width, unsigned int height, const char *imageDat
     mEglSurface = nullptr;
     mEglContext = nullptr;
     mFboTextureId = 0;
+    mTextureId = 0;
     mFboId = 0;
     mFboProgramId = 0;
-    mVboId = new GLuint[4];
+    mVboId = new GLuint[3];
     mVaoId = 0;
     mImageRawData = new GLbyte[width * height * 4];
     memcpy((void *) mImageRawData, imageData, width * height * 4);
@@ -130,7 +131,7 @@ void BgRender::Draw() {
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     // 以glClearColor设置的值来清除颜色缓冲以及深度缓冲
     // 清除颜色缓冲区
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
     // 使用程序
     glUseProgram(mFboProgramId);
@@ -138,12 +139,14 @@ void BgRender::Draw() {
     glBindFramebuffer(GL_FRAMEBUFFER, mFboId);
     // 激活纹理单元
     glActiveTexture(GL_TEXTURE0);
-    // 绑定纹理ID
-    glBindTexture(GL_TEXTURE_2D, mFboTextureId);
-    // 上传纹理
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                 mImageRawData);
+//    // 绑定纹理ID
+//    glBindTexture(GL_TEXTURE_2D, mFboTextureId);
+//    // 上传纹理
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+//                 mImageRawData);
 
+    glBindTexture(GL_TEXTURE_2D, mTextureId);
+    LOGD(TAG, "glBindTexture GL_TEXTURE_2D error=%d", glGetError());
     // 绑定VAO
     glBindVertexArray(mVaoId);
     // 绘制
@@ -182,6 +185,7 @@ void BgRender::DestroyGlesEnv() {
     mFboTextureId = 0;
     mFboId = 0;
     mFboProgramId = 0;
+    mTextureId = 0;
     delete mVboId;
     mVaoId = 0;
     delete mImageRawData;
@@ -210,37 +214,43 @@ void BgRender::createFBO() {
     glBindFramebuffer(GL_FRAMEBUFFER, mFboId);
     // 绑定FBO纹理
     glBindTexture(GL_TEXTURE_2D, mFboTextureId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 nullptr);
     // 将纹理连接到FBO附着，颜色附着
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mFboTextureId, 0);
     LOGD(TAG, "Gen FBO error=%d", glGetError());
-//    // 分配内存大小，上传纹理数据
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-//                 mImageRawData);
-//    LOGD(TAG, "glTexImage2D error=%d", glGetError());
     // 检查FBO完整性状态
     LOGD(TAG, "glCheckFramebufferStatus=%d", glCheckFramebufferStatus(GL_FRAMEBUFFER));
     // 解绑纹理
     glBindTexture(GL_TEXTURE_2D, GL_NONE);
     // 解绑FBO
     glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
+
+    // 创建一个2D纹理用于渲染
+    glGenTextures(1, &mTextureId);
+    // 设置该纹理ID为2D纹理
+    glBindTexture(GL_TEXTURE_2D, mTextureId);
+    // 设置该纹理的填充属性
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    LOGD(TAG, "GenTexture mTextureId error=%d", glGetError());
+    // 分配内存大小，上传纹理数据
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 mImageRawData);
+    glBindTexture(GL_TEXTURE_2D, GL_NONE);
+    LOGD(TAG, "glTexImage2D error=%d", glGetError());
 }
 
 void BgRender::initShader() {
     LOGD(TAG, "initShader");
     // 顶点坐标，OpenGL坐标系，三维，原点在中间
     GLfloat vVertices[] = {
-            -1.0f, -1.0f, 0.0f, // 左下
-            1.0f, -1.0f, 0.0f, // 右下
-            -1.0f, 1.0f, 0.0f, // 左上
-            1.0f, 1.0f, 0.0f, // 右上
-    };
-
-    // 正常纹理坐标，屏幕坐标系，原点在左上角
-    GLfloat vTexCoors[] = {
-            0.0f, 1.0f, // 左下
-            1.0f, 1.0f, // 右下
-            0.0f, 0.0f,  // 左上
-            1.0f, 0.0f,  // 右上
+            -1.0f, -1.0f, 0.0f, // 左下 （屏幕左上角）
+            1.0f, -1.0f, 0.0f, // 右下 （屏幕右上角）
+            -1.0f, 1.0f, 0.0f, // 左上 （屏幕左下角）
+            1.0f, 1.0f, 0.0f, // 右上 （屏幕右下角）
     };
 
     //fbo 纹理坐标与正常纹理方向不同，原点位于左下角
@@ -278,8 +288,8 @@ void BgRender::initShader() {
             "void main()                                \n"
             "{                                          \n"
             "    vec4 tempColor = texture(s_TextureMap, v_texCoord);   \n" // 通过纹理和纹理坐标采样颜色值
-            "    float luminance = tempColor.r * 0.299 + tempColor.g * 0.587 + tempColor.b * 0.114;  \n"  // 通过颜色值计算灰度
-            "    outColor = vec4(vec3(luminance), tempColor.a);         \n"  // 将灰度值输入到下一阶段
+            "    float luminance = tempColor.b * 0.299 + tempColor.g * 0.587 + tempColor.r * 0.114;  \n"  // 通过颜色值计算灰度(原图RGBA通道转为了BGRA？待解决)
+            "    outColor = vec4(vec3(luminance), 1.0);         \n"
             "}"
     };
 
@@ -309,21 +319,17 @@ void BgRender::initShader() {
     LOGD(TAG, "glLinkProgram error=%d", glGetError());
 
     // 生成 VBO ，加载顶点数据和索引数据
-    glGenBuffers(4, mVboId);
+    glGenBuffers(3, mVboId);
     // 载入vVertices
     glBindBuffer(GL_ARRAY_BUFFER, mVboId[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vVertices), vVertices, GL_STATIC_DRAW);
 
-    // 载入vTexCoors
-    glBindBuffer(GL_ARRAY_BUFFER, mVboId[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vTexCoors), vTexCoors, GL_STATIC_DRAW);
-
     // 载入vFboTexCoors
-    glBindBuffer(GL_ARRAY_BUFFER, mVboId[2]);
+    glBindBuffer(GL_ARRAY_BUFFER, mVboId[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vFboTexCoors), vFboTexCoors, GL_STATIC_DRAW);
 
     // 载入indices
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVboId[3]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVboId[2]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     LOGD(TAG, "Gen VBO error=%d", glGetError());
 
@@ -338,11 +344,11 @@ void BgRender::initShader() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
 
     // 纹理坐标
-    glBindBuffer(GL_ARRAY_BUFFER, mVboId[2]);
+    glBindBuffer(GL_ARRAY_BUFFER, mVboId[1]);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), nullptr);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVboId[3]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVboId[2]);
     // 解绑VAO
     glBindVertexArray(GL_NONE);
     LOGD(TAG, "Gen VAO error=%d", glGetError());
@@ -367,10 +373,10 @@ void BgRender::SetRotate(int type) {
             break;
         case ROTATE_90:
             replaceFboVertex = new GLfloat[8]{
-                    1.0f, 0.0f,
-                    1.0f, 1.0f,
-                    0.0f, 0.0f,
                     0.0f, 1.0f,
+                    0.0f, 0.0f,
+                    1.0f, 1.0f,
+                    1.0f, 0.0f,
             };
             break;
         case ROTATE_180:
@@ -383,17 +389,53 @@ void BgRender::SetRotate(int type) {
             break;
         case ROTATE_270:
             replaceFboVertex = new GLfloat[8]{
-                    0.0f, 1.0f,
-                    0.0f, 0.0f,
-                    1.0f, 1.0f,
                     1.0f, 0.0f,
+                    1.0f, 1.0f,
+                    0.0f, 0.0f,
+                    0.0f, 1.0f,
             };
             break;
         default:
             return;
     }
     // 重新载入
-    glBindBuffer(GL_ARRAY_BUFFER, mVboId[2]);
+    glBindBuffer(GL_ARRAY_BUFFER, mVboId[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(replaceFboVertex[0]) * 8, replaceFboVertex, GL_STATIC_DRAW);
+
+    delete replaceFboVertex;
+}
+
+void BgRender::SetMirrorType(int type) {
+    LOGD(TAG, "SetMirrorType type=%d", type);
+    GLfloat *replaceFboVertex;
+    switch (type) {
+        case MIRROR_HORIZONTAL:
+            replaceFboVertex = new GLfloat[8]{
+                    1.0f, 0.0f, // 右下
+                    0.0f, 0.0f,  // 左下
+                    1.0f, 1.0f, // 右上
+                    0.0f, 1.0f,  // 左上
+            };
+            break;
+        case MIRROR_VERTICAL:
+            replaceFboVertex = new GLfloat[8]{
+                    0.0f, 1.0f,
+                    1.0f, 1.0f,
+                    0.0f, 0.0f,
+                    1.0f, 0.0f,
+            };
+            break;
+        case MIRROR_NONE:
+        default:
+            replaceFboVertex = new GLfloat[8]{
+                    0.0f, 0.0f,  // 左下
+                    1.0f, 0.0f, // 右下
+                    0.0f, 1.0f,  // 左上
+                    1.0f, 1.0f, // 右上
+            };
+    }
+    // 重新载入
+    glBindBuffer(GL_ARRAY_BUFFER, mVboId[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(replaceFboVertex[0]) * 8, replaceFboVertex, GL_STATIC_DRAW);
 
     delete replaceFboVertex;

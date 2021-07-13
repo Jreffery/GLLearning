@@ -13,6 +13,10 @@ class BgRender {
         const val ROTATE_90 = 1
         const val ROTATE_180 = 2
         const val ROTATE_270 = 3
+
+        const val MIRROR_NONE = 0
+        const val MIRROR_HORIZONTAL = 1
+        const val MIRROR_VERTICAL = 2
     }
 
     private var mNativePtr: Long = 0
@@ -59,5 +63,12 @@ class BgRender {
      * @param type 旋转角度 {@see ROTATE_0}
      * */
     external fun setRotate(ptr: Long, type: Int)
+
+    /**
+     * 设置镜像类型
+     * @param ptr native对象指针
+     * @param type 镜像类型
+     * */
+    external fun setMirrorType(ptr: Long, type: Int);
 
 }

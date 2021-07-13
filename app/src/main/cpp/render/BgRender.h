@@ -13,6 +13,10 @@
 #define ROTATE_180 2
 #define ROTATE_270 3
 
+#define MIRROR_NONE 0
+#define MIRROR_HORIZONTAL 1
+#define MIRROR_VERTICAL 2
+
 /**
  * 背景渲染器
  * */
@@ -40,6 +44,8 @@ private:
     void createFBO();
     // 初始化OpenGL shader
     void initShader();
+    // 纹理贴图
+    GLuint mTextureId;
 
     // FBO渲染程序id
     GLuint mFboProgramId;
@@ -75,6 +81,8 @@ public:
 
     // 设置旋转角度
     void SetRotate(int type);
+
+    void SetMirrorType(int type);
 
     // 销毁OpenGL ES运行环境
     void DestroyGlesEnv();

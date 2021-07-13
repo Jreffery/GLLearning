@@ -77,17 +77,23 @@ class RotateFragment : Fragment(), View.OnClickListener {
                 val grayBitmap = Bitmap.createBitmap(bitmapBuffer, mWidth, mHeight, Bitmap.Config.ARGB_8888)
                 mFragmentBinding.rotateIv.setImageBitmap(grayBitmap)
             }
-            mFragmentBinding.rotate0 ->{
+            mFragmentBinding.rotate0 -> {
                 mBgRender.setRotate(mBgRender.getNativePtr(), BgRender.ROTATE_0)
             }
-            mFragmentBinding.rotate90 ->{
+            mFragmentBinding.rotate90 -> {
                 mBgRender.setRotate(mBgRender.getNativePtr(), BgRender.ROTATE_90)
             }
-            mFragmentBinding.rotate180 ->{
+            mFragmentBinding.rotate180 -> {
                 mBgRender.setRotate(mBgRender.getNativePtr(), BgRender.ROTATE_180)
             }
-            mFragmentBinding.rotate270 ->{
+            mFragmentBinding.rotate270 -> {
                 mBgRender.setRotate(mBgRender.getNativePtr(), BgRender.ROTATE_270)
+            }
+            mFragmentBinding.mirrorHorizontal -> {
+                mBgRender.setMirrorType(mBgRender.getNativePtr(), BgRender.MIRROR_HORIZONTAL)
+            }
+            mFragmentBinding.mirrorVertical -> {
+                mBgRender.setMirrorType(mBgRender.getNativePtr(), BgRender.MIRROR_VERTICAL)
             }
         }
     }

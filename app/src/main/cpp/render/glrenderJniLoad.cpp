@@ -90,3 +90,11 @@ Java_cc_appweb_gllearning_componet_BgRender_setRotate(JNIEnv *env, jobject thiz,
     BgRender* render = (BgRender *) ptr;
     render->SetRotate(type);
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_cc_appweb_gllearning_componet_BgRender_setMirrorType(JNIEnv *env, jobject thiz, jlong ptr,
+                                                          jint type) {
+    LOGD(LOG_TAG, "setMirrorType");
+    BgRender* render = (BgRender *) ptr;
+    render->SetMirrorType(type);
+}
