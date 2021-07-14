@@ -50,7 +50,7 @@ private:
     // FBO渲染程序id
     GLuint mFboProgramId;
     // VBO IDs Vertex Buffer Object 顶点缓冲区对象
-    GLuint* mVboId;
+    GLuint* mVboIds;
     // VAO ID Vertex Array Object 顶点数组对象
     // VAO 的主要作用是用于管理 VBO 或 EBO，减少 glBindBuffer 、glEnableVertexAttribArray、 glVertexAttribPointer 这些调用操作
     // 高效地实现在顶点数组配置之间切换。

@@ -27,7 +27,7 @@ BgRender::BgRender(unsigned int width, unsigned int height, const char *imageDat
     mTextureId = 0;
     mFboId = 0;
     mFboProgramId = 0;
-    mVboId = new GLuint[3];
+    mVboIds = new GLuint[3];
     mVaoId = 0;
     mImageRawData = new GLbyte[width * height * 4];
     memcpy((void *) mImageRawData, imageData, width * height * 4);
@@ -178,16 +178,40 @@ void BgRender::DestroyGlesEnv() {
         eglReleaseThread();
         eglTerminate(mEglDisplay);
     }
+
     mEglDisplay = nullptr;
     mEglConfig = nullptr;
     mEglSurface = nullptr;
     mEglContext = nullptr;
+
+    LOGD(TAG, "mFboTextureId=%d mFboId=%d mFboProgramId=%d mTextureId=%d mVaoId=%d", mFboTextureId,
+         mFboId, mFboProgramId, mTextureId, mVaoId);
+    if (mFboTextureId != 0) {
+        glDeleteTextures(1, &mFboTextureId);
+    }
     mFboTextureId = 0;
+    if (mFboId != 0) {
+        glDeleteFramebuffers(1, & mFboId);
+    }
     mFboId = 0;
+    if (mFboProgramId != 0) {
+        glDeleteProgram(mFboProgramId);
+    }
     mFboProgramId = 0;
+    if (mTextureId != 0) {
+        glDeleteTextures(1, &mTextureId);
+    }
     mTextureId = 0;
-    delete mVboId;
+    if (mVboIds != nullptr) {
+        glDeleteBuffers(3, mVboIds);
+    }
+    delete mVboIds;
+    mVboIds = nullptr;
+    if (mVaoId != 0) {
+        glDeleteVertexArrays(1, &mVaoId);
+    }
     mVaoId = 0;
+    LOGD(TAG, "glDelete error=%d", glGetError());
     delete mImageRawData;
     mImageRawData = nullptr;
     delete mDrawData;
@@ -319,17 +343,17 @@ void BgRender::initShader() {
     LOGD(TAG, "glLinkProgram error=%d", glGetError());
 
     // 生成 VBO ，加载顶点数据和索引数据
-    glGenBuffers(3, mVboId);
+    glGenBuffers(3, mVboIds);
     // 载入vVertices
-    glBindBuffer(GL_ARRAY_BUFFER, mVboId[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, mVboIds[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vVertices), vVertices, GL_STATIC_DRAW);
 
     // 载入vFboTexCoors
-    glBindBuffer(GL_ARRAY_BUFFER, mVboId[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, mVboIds[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vFboTexCoors), vFboTexCoors, GL_STATIC_DRAW);
 
     // 载入indices
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVboId[2]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVboIds[2]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     LOGD(TAG, "Gen VBO error=%d", glGetError());
 
@@ -338,17 +362,17 @@ void BgRender::initShader() {
     // 在绑定 VAO 之后，操作 VBO ，当前 VAO 会记录 VBO 的操作
     glBindVertexArray(mVaoId);
     // 以下VBO操作会被VAO记录
-    glBindBuffer(GL_ARRAY_BUFFER, mVboId[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, mVboIds[0]);
     // 顶点坐标
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
 
     // 纹理坐标
-    glBindBuffer(GL_ARRAY_BUFFER, mVboId[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, mVboIds[1]);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), nullptr);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVboId[2]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVboIds[2]);
     // 解绑VAO
     glBindVertexArray(GL_NONE);
     LOGD(TAG, "Gen VAO error=%d", glGetError());
@@ -399,7 +423,7 @@ void BgRender::SetRotate(int type) {
             return;
     }
     // 重新载入
-    glBindBuffer(GL_ARRAY_BUFFER, mVboId[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, mVboIds[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(replaceFboVertex[0]) * 8, replaceFboVertex, GL_STATIC_DRAW);
 
     delete replaceFboVertex;
@@ -435,7 +459,7 @@ void BgRender::SetMirrorType(int type) {
             };
     }
     // 重新载入
-    glBindBuffer(GL_ARRAY_BUFFER, mVboId[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, mVboIds[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(replaceFboVertex[0]) * 8, replaceFboVertex, GL_STATIC_DRAW);
 
     delete replaceFboVertex;
