@@ -27,6 +27,8 @@ BgRender::BgRender(unsigned int width, unsigned int height, const char *imageDat
     mTextureId = 0;
     mFboId = 0;
     mFboProgramId = 0;
+    mVertexShader = 0;
+    mFragmentShader = 0;
     mVboIds = new GLuint[3];
     mVaoId = 0;
     mImageRawData = new GLbyte[width * height * 4];
@@ -184,8 +186,8 @@ void BgRender::DestroyGlesEnv() {
     mEglSurface = nullptr;
     mEglContext = nullptr;
 
-    LOGD(TAG, "mFboTextureId=%d mFboId=%d mFboProgramId=%d mTextureId=%d mVaoId=%d", mFboTextureId,
-         mFboId, mFboProgramId, mTextureId, mVaoId);
+    LOGD(TAG, "mFboTextureId=%d mFboId=%d mFboProgramId=%d mVertexShader=%d mFragmentShader=%d mTextureId=%d mVaoId=%d",
+         mFboTextureId, mFboId, mFboProgramId, mVertexShader, mFragmentShader, mTextureId, mVaoId);
     if (mFboTextureId != 0) {
         glDeleteTextures(1, &mFboTextureId);
     }
@@ -211,11 +213,20 @@ void BgRender::DestroyGlesEnv() {
         glDeleteVertexArrays(1, &mVaoId);
     }
     mVaoId = 0;
+    if (mVertexShader != 0) {
+        glDeleteShader(mVertexShader);
+    }
+    mVertexShader = 0;
+    if (mFragmentShader != 0) {
+        glDeleteShader(mFragmentShader);
+    }
+    mFragmentShader = 0;
     LOGD(TAG, "glDelete error=%d", glGetError());
     delete mImageRawData;
     mImageRawData = nullptr;
     delete mDrawData;
     mDrawData = nullptr;
+
 }
 
 void BgRender::createFBO() {
@@ -312,32 +323,32 @@ void BgRender::initShader() {
             "void main()                                \n"
             "{                                          \n"
             "    vec4 tempColor = texture(s_TextureMap, v_texCoord);   \n" // 通过纹理和纹理坐标采样颜色值
-            "    float luminance = tempColor.b * 0.299 + tempColor.g * 0.587 + tempColor.r * 0.114;  \n"  // 通过颜色值计算灰度(原图RGBA通道转为了BGRA？待解决)
+            "    float luminance = tempColor.b * 0.299 + tempColor.g * 0.587 + tempColor.r * 0.114;  \n"  // 通过颜色值计算灰度(原图 RGBA 通道被转成了 BGRA ？待解决)
             "    outColor = vec4(vec3(luminance), 1.0);         \n"
             "}"
     };
 
     // 创建一个顶点shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    mVertexShader = glCreateShader(GL_VERTEX_SHADER);
     // 替换着色器对象的源代码
     GLint sourceLen = strlen(vShaderStr[0]);
-    glShaderSource(vertexShader, 1, vShaderStr, &sourceLen);
+    glShaderSource(mVertexShader, 1, vShaderStr, &sourceLen);
     // 编译shader
-    glCompileShader(vertexShader);
+    glCompileShader(mVertexShader);
 
     // 创建一个片元shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    mFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     // 替换着色器对象的源代码
     sourceLen = strlen(fFboShaderStr[0]);
-    glShaderSource(fragmentShader, 1, fFboShaderStr, &sourceLen);
+    glShaderSource(mFragmentShader, 1, fFboShaderStr, &sourceLen);
     // 编译shader
-    glCompileShader(fragmentShader);
+    glCompileShader(mFragmentShader);
 
     // 创建程序
     mFboProgramId = glCreateProgram();
     // 绑定shader
-    glAttachShader(mFboProgramId, vertexShader);
-    glAttachShader(mFboProgramId, fragmentShader);
+    glAttachShader(mFboProgramId, mVertexShader);
+    glAttachShader(mFboProgramId, mFragmentShader);
     // 链接程序
     glLinkProgram(mFboProgramId);
     LOGD(TAG, "glLinkProgram error=%d", glGetError());
@@ -372,7 +383,7 @@ void BgRender::initShader() {
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), nullptr);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVboIds[2]);
+//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVboIds[2]);
     // 解绑VAO
     glBindVertexArray(GL_NONE);
     LOGD(TAG, "Gen VAO error=%d", glGetError());

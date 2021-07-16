@@ -18,7 +18,10 @@
 #define MIRROR_VERTICAL 2
 
 /**
- * 背景渲染器
+ * 图片离屏渲染器示例，OpenGLES版本3.0
+ * 1. 创建EGL环境
+ * 2. 载入RGBA图片作为纹理
+ * 3. 提供灰度图、90度旋转、镜像等实现示例
  * */
 class BgRender {
 
@@ -49,6 +52,10 @@ private:
 
     // FBO渲染程序id
     GLuint mFboProgramId;
+    // 顶点shader
+    GLuint mVertexShader;
+    // 片元shader
+    GLuint mFragmentShader;
     // VBO IDs Vertex Buffer Object 顶点缓冲区对象
     GLuint* mVboIds;
     // VAO ID Vertex Array Object 顶点数组对象

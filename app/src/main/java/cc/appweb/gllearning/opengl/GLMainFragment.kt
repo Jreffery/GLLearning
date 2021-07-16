@@ -1,5 +1,6 @@
 package cc.appweb.gllearning.opengl
 
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -23,6 +24,7 @@ class GLMainFragment : Fragment(), View.OnClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         mFragmentBinding.eglRender.setOnClickListener(this)
         mFragmentBinding.glRotate.setOnClickListener(this)
+        mFragmentBinding.yuvRotate.setOnClickListener(this)
     }
 
     override fun onClick(v: View?) {
@@ -39,6 +41,15 @@ class GLMainFragment : Fragment(), View.OnClickListener {
                     replace(R.id.fragment_container, RotateFragment())
                     addToBackStack(null)
                     commit()
+                }
+            }
+            mFragmentBinding.yuvRotate -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    fragmentManager!!.beginTransaction().apply {
+                        replace(R.id.fragment_container, YuvRotateFragment())
+                        addToBackStack(null)
+                        commit()
+                    }
                 }
             }
         }

@@ -2,6 +2,9 @@ package cc.appweb.gllearning.componet
 
 import java.nio.ByteBuffer
 
+/**
+ * 对接底层BgRender.cpp
+ * */
 class BgRender {
 
     companion object {
