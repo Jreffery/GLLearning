@@ -383,7 +383,7 @@ void BgRender::initShader() {
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), nullptr);
 
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVboIds[2]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mVboIds[2]);
     // 解绑VAO
     glBindVertexArray(GL_NONE);
     LOGD(TAG, "Gen VAO error=%d", glGetError());

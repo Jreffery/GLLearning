@@ -19,7 +19,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-class YuvRotateFragment : Fragment(), View.OnClickListener {
+class JavaRotateFragment : Fragment(), View.OnClickListener {
 
     private lateinit var mFragmentBinding: YuvRotateFragmentBinding
     private lateinit var mRotateRender: RotateRender
