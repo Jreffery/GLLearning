@@ -56,10 +56,11 @@ class VideoEncoder(width: Int, height: Int, frameRate: Int, bitRate: Int, iFrame
                 // 设置码率控制模式为 固定码率
                 setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
                 // 根据手机设置不同的颜色参数
-                setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible)
+                // 使用COLOR_FormatYUV420Flexible需要使用getInputImage的模式
+                setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar)
             } else {
                 // 根据手机设置不同的颜色参数
-                setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar)
+                setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar)
             }
             // 设置码率，参考网络传输和文件大小设置
             setInteger(MediaFormat.KEY_BIT_RATE, bitRate)

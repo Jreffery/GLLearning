@@ -133,7 +133,7 @@ class VideoDecodePlayer(val filePath: String, val surface: Surface, val playList
             val mediaCodec = MediaCodec.createDecoderByType("video/avc")
             // 设置缓冲区回调
             mediaCodec.setCallback(DecodeCallback())
-            // 配置解码器
+            // 配置解码器，配置了surface会导致获取不到数据
             mediaCodec.configure(videoFormat, surface, null, 0)
             // 开启解码器
             mediaCodec.start()
