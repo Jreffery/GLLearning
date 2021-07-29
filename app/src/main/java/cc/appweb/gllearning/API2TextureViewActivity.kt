@@ -291,7 +291,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
             mCameraDevice?.let {
 
                 // 创建图像接收者，指定width/height
-                mImageReader = ImageReader.newInstance(mPictureSize!!.width, mPictureSize!!.height, ImageFormat.JPEG, 1).apply {
+                mImageReader = ImageReader.newInstance(mPictureSize!!.width, mPictureSize!!.height, ImageFormat.YUV_420_888, 1).apply {
                     setOnImageAvailableListener(PictureReaderCallback(), mImageHandler)
                 }
                 // 录制图像接收者
@@ -399,15 +399,18 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
 
             reader?.let {
                 it.acquireNextImage()?.apply {
-                    val byteBuffer = planes[0].buffer
-                    val byteArray = ByteArray(byteBuffer.remaining())
-                    byteBuffer.get(byteArray)
+                    // NV12
+                    val byteBuffer1 = planes[0].buffer
+                    val byteBuffer2 = planes[1].buffer
+                    val byteArray = ByteArray(byteBuffer1.limit() + byteBuffer2.limit())
+                    byteBuffer1.get(byteArray, 0, byteBuffer1.limit())
+                    byteBuffer2.get(byteArray, byteBuffer1.limit(), byteBuffer2.limit())
                     // 需要关闭image
                     close()
                     //拍照成功
                     // 拍照成功
                     Thread {
-                        val file = StorageUtil.getFile("${StorageUtil.PATH_LEARNING_PIC + File.separator}pic${System.currentTimeMillis()}.jpeg")
+                        val file = StorageUtil.getFile("${StorageUtil.PATH_LEARNING_RAW + File.separator}${System.currentTimeMillis()}nv12.yuv")
                         try {
                             val fileOutput = FileOutputStream(file)
                             fileOutput.write(byteArray)

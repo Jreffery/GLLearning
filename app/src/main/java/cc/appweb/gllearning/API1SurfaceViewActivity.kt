@@ -277,7 +277,7 @@ class API1SurfaceViewActivity : AppCompatActivity(), View.OnClickListener {
                 var previewHeight = 360
                 parameters.supportedPreviewSizes.forEach { size ->
                     val tmpRatio = abs((size.width.toFloat() / size.height.toFloat()) - ratio)
-                    // 找出宽高比例最相机的预览尺寸
+                    // 找出宽高比例最接近相机的预览尺寸
                     if (tmpRatio < curRatio) {
                         curRatio = tmpRatio
                         previewWidth = size.width
