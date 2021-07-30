@@ -30,4 +30,12 @@
         android:layout_height="wrap_content"
         android:text="Java Rotate"/>
 
+    <Button
+        android:id="@+id/yuv_rotate"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/java_rotate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Yuv Rotate"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

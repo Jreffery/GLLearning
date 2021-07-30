@@ -1,40 +1,37 @@
 package cc.appweb.gllearning.opengl
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
-import cc.appweb.gllearning.R
 import cc.appweb.gllearning.componet.RotateRender
-import cc.appweb.gllearning.databinding.JavaRotateFragmentBinding
-import cc.appweb.gllearning.util.StorageUtil
-import java.io.File
-import java.io.FileOutputStream
+import cc.appweb.gllearning.componet.YuvRotateRender
+import cc.appweb.gllearning.databinding.YuvRotateFragmentBinding
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/**
- * 通过Java层 OpenGLES实现图像旋转，使用RotateRender.java
- * */
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-class JavaRotateFragment : Fragment(), View.OnClickListener {
+class YuvRotateFragment : Fragment(), View.OnClickListener {
 
-    private lateinit var mFragmentBinding: JavaRotateFragmentBinding
-    private lateinit var mRotateRender: RotateRender
+    private lateinit var mFragmentBinding: YuvRotateFragmentBinding
+    private lateinit var mRotateRender: YuvRotateRender
+    private lateinit var mBitmapBuffer: ByteBuffer
 
-    private var mByteCount = 0
     private var mWidth = 0
     private var mHeight = 0
-    private var mBitmapBuffer: ByteBuffer? = null
-    private var mRotateType = RotateRender.ROTATE_0
+    private var mRotateType = YuvRotateRender.ROTATE_0
+
+    companion object {
+        private const val TAG = "YuvRotateFragment"
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        mFragmentBinding = JavaRotateFragmentBinding.inflate(layoutInflater)
+        mFragmentBinding = YuvRotateFragmentBinding.inflate(inflater)
         return mFragmentBinding.root
     }
 
@@ -44,28 +41,33 @@ class JavaRotateFragment : Fragment(), View.OnClickListener {
         mFragmentBinding.rotate90.setOnClickListener(this)
         mFragmentBinding.rotate180.setOnClickListener(this)
         mFragmentBinding.rotate270.setOnClickListener(this)
-        mRotateRender = RotateRender()
+        mRotateRender = YuvRotateRender()
         mRotateRender.initRender()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val bitmap = BitmapFactory.decodeStream(resources.openRawResource(R.raw.c_luo))
-        // 解码图片
-        mByteCount = bitmap.byteCount
-        mWidth = bitmap.width
-        mHeight = bitmap.height
-        mBitmapBuffer = ByteBuffer.allocateDirect(mByteCount)
-        bitmap.copyPixelsToBuffer(mBitmapBuffer)
-        mBitmapBuffer!!.flip()
+
+        val inputStream = context!!.resources.assets.open("nv12/1280x720nv12.yuv")
+        mWidth = 1280
+        mHeight = 720
+        mBitmapBuffer = ByteBuffer.allocateDirect(mWidth * mHeight * 3 / 2)
+        var size: Int
+        val data = ByteArray(1024)
+        while (inputStream.read(data).also { size = it } != -1) {
+            mBitmapBuffer.put(data, 0, size)
+        }
+        mBitmapBuffer.flip()
+        Log.d(TAG, "mBitmapBuffer capacity=${mBitmapBuffer.capacity()} limit=${mBitmapBuffer.limit()} pos=${mBitmapBuffer.position()}")
     }
 
     override fun onClick(v: View?) {
         when (v) {
             mFragmentBinding.testBtn -> {
                 mRotateRender.setRotate(mRotateType)
-                val bitmapBuffer = mRotateRender.getImage(mBitmapBuffer!!, mWidth, mHeight)
+                val bitmapBuffer = mRotateRender.getImage(mBitmapBuffer, mWidth, mHeight)
+                mBitmapBuffer.position(0)
                 val intBuffer = IntArray(mWidth * mHeight)
                 // 小端
                 bitmapBuffer.order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get(intBuffer)
@@ -82,11 +84,6 @@ class JavaRotateFragment : Fragment(), View.OnClickListener {
 
                 val grayBitmap = Bitmap.createBitmap(intBuffer, bitmapW, bitmapH, Bitmap.Config.ARGB_8888)
                 mFragmentBinding.picIv.setImageBitmap(grayBitmap)
-
-//                val output = FileOutputStream(StorageUtil.getFile(StorageUtil.PATH_LEARNING_RAW + File.separator + System.currentTimeMillis() + "b.raw"))
-//                output.write(bitmapBuffer.array())
-//                output.flush()
-//                output.close()
             }
             mFragmentBinding.rotate0 -> {
                 mRotateType = RotateRender.ROTATE_0
@@ -101,11 +98,6 @@ class JavaRotateFragment : Fragment(), View.OnClickListener {
                 mRotateType = RotateRender.ROTATE_270
             }
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        mRotateRender.destroy()
     }
 
 }

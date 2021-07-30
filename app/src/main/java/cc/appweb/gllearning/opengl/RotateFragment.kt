@@ -14,7 +14,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 /**
- * 通过OpenGL渲染实现旋转、镜像
+ * 通过C++层 OpenGLES渲染实现旋转、镜像
  *
  * */
 class RotateFragment : Fragment(), View.OnClickListener {

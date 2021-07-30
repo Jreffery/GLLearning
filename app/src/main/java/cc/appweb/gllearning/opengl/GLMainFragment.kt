@@ -25,6 +25,7 @@ class GLMainFragment : Fragment(), View.OnClickListener {
         mFragmentBinding.eglRender.setOnClickListener(this)
         mFragmentBinding.glRotate.setOnClickListener(this)
         mFragmentBinding.javaRotate.setOnClickListener(this)
+        mFragmentBinding.yuvRotate.setOnClickListener(this)
     }
 
     override fun onClick(v: View?) {
@@ -47,6 +48,15 @@ class GLMainFragment : Fragment(), View.OnClickListener {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                     fragmentManager!!.beginTransaction().apply {
                         replace(R.id.fragment_container, JavaRotateFragment())
+                        addToBackStack(null)
+                        commit()
+                    }
+                }
+            }
+            mFragmentBinding.yuvRotate -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    fragmentManager!!.beginTransaction().apply {
+                        replace(R.id.fragment_container, YuvRotateFragment())
                         addToBackStack(null)
                         commit()
                     }
