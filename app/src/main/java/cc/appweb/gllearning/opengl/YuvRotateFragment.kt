@@ -10,7 +10,7 @@ import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import cc.appweb.gllearning.componet.RotateRender
-import cc.appweb.gllearning.componet.YuvRotateRender
+import cc.appweb.gllearning.componet.Yuv2RgbRotateRender
 import cc.appweb.gllearning.databinding.YuvRotateFragmentBinding
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -19,12 +19,12 @@ import java.nio.ByteOrder
 class YuvRotateFragment : Fragment(), View.OnClickListener {
 
     private lateinit var mFragmentBinding: YuvRotateFragmentBinding
-    private lateinit var mRotateRender: YuvRotateRender
+    private lateinit var m2RgbRotateRender: Yuv2RgbRotateRender
     private lateinit var mBitmapBuffer: ByteBuffer
 
     private var mWidth = 0
     private var mHeight = 0
-    private var mRotateType = YuvRotateRender.ROTATE_0
+    private var mRotateType = Yuv2RgbRotateRender.ROTATE_0
 
     companion object {
         private const val TAG = "YuvRotateFragment"
@@ -41,8 +41,8 @@ class YuvRotateFragment : Fragment(), View.OnClickListener {
         mFragmentBinding.rotate90.setOnClickListener(this)
         mFragmentBinding.rotate180.setOnClickListener(this)
         mFragmentBinding.rotate270.setOnClickListener(this)
-        mRotateRender = YuvRotateRender()
-        mRotateRender.initRender()
+        m2RgbRotateRender = Yuv2RgbRotateRender()
+        m2RgbRotateRender.initRender()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,8 +65,10 @@ class YuvRotateFragment : Fragment(), View.OnClickListener {
     override fun onClick(v: View?) {
         when (v) {
             mFragmentBinding.testBtn -> {
-                mRotateRender.setRotate(mRotateType)
-                val bitmapBuffer = mRotateRender.getImage(mBitmapBuffer, mWidth, mHeight)
+                m2RgbRotateRender.setRotate(mRotateType)
+                val start = System.nanoTime()
+                val bitmapBuffer = m2RgbRotateRender.getImage(mBitmapBuffer, mWidth, mHeight)
+                Log.d(TAG, "rotate yuv using ${(System.nanoTime() - start) / 1000} mirco second")
                 mBitmapBuffer.position(0)
                 val intBuffer = IntArray(mWidth * mHeight)
                 // 小端
@@ -98,6 +100,11 @@ class YuvRotateFragment : Fragment(), View.OnClickListener {
                 mRotateType = RotateRender.ROTATE_270
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        m2RgbRotateRender.destroy()
     }
 
 }
