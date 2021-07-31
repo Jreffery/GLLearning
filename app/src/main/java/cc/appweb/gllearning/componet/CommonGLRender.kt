@@ -38,6 +38,11 @@ abstract class CommonGLRender {
     companion object {
         private const val TAG = "CommonGLRender"
 
+        const val ROTATE_0 = 0
+        const val ROTATE_90 = 1
+        const val ROTATE_180 = 2
+        const val ROTATE_270 = 3
+
         /**
          * 设置通用的2D纹理属性
          * */

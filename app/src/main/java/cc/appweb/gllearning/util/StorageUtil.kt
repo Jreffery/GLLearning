@@ -1,6 +1,8 @@
 package cc.appweb.gllearning.util
 
 import java.io.File
+import java.io.RandomAccessFile
+import java.nio.ByteBuffer
 
 class StorageUtil {
 
@@ -38,6 +40,13 @@ class StorageUtil {
             }
 
             return File(rootPath + File.separator + path[path.size -1])
+        }
+
+        fun writeBufferIntoFile(fileName: String, buffer: ByteBuffer) {
+            val randomAccessFile = RandomAccessFile(fileName, "rw")
+            val fileChannel = randomAccessFile.channel
+            fileChannel.write(buffer, 0)
+            fileChannel.close()
         }
 
     }

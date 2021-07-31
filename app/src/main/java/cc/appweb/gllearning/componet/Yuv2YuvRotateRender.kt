@@ -1,23 +1,21 @@
 package cc.appweb.gllearning.componet
 
-import android.opengl.*
+import android.opengl.GLES30
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import cc.appweb.gllearning.util.StorageUtil
-import java.io.File
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import java.util.concurrent.CountDownLatch
 
 /**
- * 图像旋转渲染器
+ * YUV420SP（NV12）图像旋转渲染器，输出为NV12
  * */
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-class RotateRender : CommonGLRender() {
+class Yuv2YuvRotateRender : CommonGLRender() {
 
-    private var mRotateType = ROTATE_0
+    private var mRotateType = ROTATE_180
 
     // FBO ID
     private var mFboId: Int = 0
@@ -25,8 +23,11 @@ class RotateRender : CommonGLRender() {
     // FBO附着的纹理id
     private var mFboTextureId: Int = 0;
 
-    // 纹理 ID
-    private var mTextureId: Int = 0
+    // y变量 纹理ID
+    private var mYTextureId: Int = 0
+
+    // uv变量 纹理ID
+    private var mUVTextureId: Int = 0
 
     // 顶点shader
     private var mVertexShader: Int = 0
@@ -50,7 +51,7 @@ class RotateRender : CommonGLRender() {
     private var mOriginHeight = 0
 
     companion object {
-        private const val TAG = "RotateRender"
+        private const val TAG = "Yuv2YuvRotateRender"
 
         val vVertices = floatArrayOf(
                 -1.0f, -1.0f,   // 左下 （屏幕左上角）
@@ -86,14 +87,41 @@ class RotateRender : CommonGLRender() {
         // 用于FBO渲染的片段着色器shader，取每个像素的灰度值
         val fragmentShader =
                 "#version 300 es                            \n" +
-                        "precision mediump float;                   \n" + // 设置默认的精度限定符
+                        "precision highp float;                   \n" + // 设置默认的精度限定符
                         "in vec2 v_texCoord;                        \n" + // 导入纹理坐标，描述片段
                         "layout(location = 0) out vec4 outColor;    \n" + // 提供片段着色器输出变量的声明，这将是传递到下一阶段的颜色
-                        "uniform sampler2D s_TextureMap;            \n" + // 声明GL_TEXTURE_2D绑定的空间变量，取出纹理数据
+                        "uniform sampler2D yTextureMap;             \n" + // 保存y变量的纹理
+                        "uniform sampler2D uvTextureMap;            \n" + // 保存uv变量的纹理
+                        "uniform float width;                       \n" +
+                        "uniform mat3 rotateM;                      \n" +
                         "void main()                                \n" +
                         "{                                          \n" +
-                        "    vec4 tempColor = texture(s_TextureMap, v_texCoord);   \n" + // 通过纹理和纹理坐标采样颜色值
-                        "    outColor = vec4(tempColor.b, tempColor.g, tempColor.r, tempColor.a);" +  // (原图 RGBA 通道被转成了 BGRA ？待解决)
+//                        "    mat3 rotateM = mat3(-1.0,0.0,0.0,0.0,-1.0,0.0,0.0,0.0,1.0);  \n" +
+                        "    float offset = 1.0/width;              \n" +
+                        "    vec2 move = vec2(0.5, 0.5);            \n" +
+                        "    if (v_texCoord.t > (2.0/3.0) ) {       \n" +
+                        "        float tt = (v_texCoord.t - (2.0/3.0)) * 3.0;  \n" +
+                        "        vec2 b1 = vec2(v_texCoord.s, tt) - move;       \n" +
+                        "        vec2 a1 = (rotateM * vec3(b1, 1.0) + vec3(move, 1.0)).st;  \n" +
+                        "        vec2 b2 = vec2(v_texCoord.s + 2.0 * offset, tt) - move; \n" +
+                        "        vec2 a2 = (rotateM * vec3(b2, 1.0) + vec3(move, 1.0)).st;  \n" +
+                        "        outColor.rg = texture(uvTextureMap, a1).ra;  \n" +
+                        "        outColor.ba = texture(uvTextureMap, a2).ra;  \n" +
+                        "    } else {                               \n" +
+                        "        float tt = v_texCoord.t * 3.0 / 2.0;  \n" +
+                        "        vec2 b1 = vec2(v_texCoord.s, tt) - move;       \n" +
+                        "        vec2 a1 = (rotateM * vec3(b1, 1.0) + vec3(move, 1.0)).st;  \n" +
+                        "        vec2 b2 = vec2(v_texCoord.s + offset, tt) - move; \n" +
+                        "        vec2 a2 = (rotateM * vec3(b2, 1.0) + vec3(move, 1.0)).st;  \n" +
+                        "        vec2 b3 = vec2(v_texCoord.s + offset * 2.0, tt) - move;       \n" +
+                        "        vec2 a3 = (rotateM * vec3(b3, 1.0) + vec3(move, 1.0)).st;  \n" +
+                        "        vec2 b4 = vec2(v_texCoord.s + offset * 3.0, tt) - move; \n" +
+                        "        vec2 a4 = (rotateM * vec3(b4, 1.0) + vec3(move, 1.0)).st;  \n" +
+                        "        outColor.r = texture(yTextureMap, a1).r;  \n" +
+                        "        outColor.g = texture(yTextureMap, a2).r;  \n" +
+                        "        outColor.b = texture(yTextureMap, a3).r;  \n" +
+                        "        outColor.a = texture(yTextureMap, a4).r;  \n" +
+                        "    }                                      \n" +
                         "}"
     }
 
@@ -102,8 +130,6 @@ class RotateRender : CommonGLRender() {
         lateinit var byteBuffer: ByteBuffer
         val countDownLatch = CountDownLatch(1)
         addTask {
-//            StorageUtil.writeBufferIntoFile(StorageUtil.getFile(StorageUtil.PATH_LEARNING_RAW + File.separator + System.currentTimeMillis() + "b.raw").absolutePath, imageByteByteBuffer)
-
             mOriginWidth = originWidth
             mOriginHeight = originHeight
 
@@ -120,19 +146,28 @@ class RotateRender : CommonGLRender() {
             // FBO需要有纹理附着
             GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mFboId)
             GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mFboTextureId)
-            GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, fboWidth,
-                    fboHeight, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null)
+            // RGBA -> YUV（NV12），width和height需要相应改变
+            GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, fboWidth / 4,
+                    fboHeight * 3 / 2, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null)
             GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, mFboTextureId, 0)
             Log.d(TAG, "getImage glFramebufferTexture2D error=${GLES30.glGetError()} " +
                     "glCheckFramebufferStatus=${GLES30.glCheckFramebufferStatus(GLES30.GL_FRAMEBUFFER)}")
             GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, GLES30.GL_NONE)
 
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mTextureId)
-            Log.d(TAG, "getImage glBindTexture error=${GLES30.glGetError()}")
             // 上传纹理
-            GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, mOriginWidth,
-                    mOriginHeight, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, imageByteByteBuffer)
-            Log.d(TAG, "getImage glTexImage2D error=${GLES30.glGetError()}")
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mYTextureId)
+            // GL_LUMINANCE -> (y, y, y, 1)
+            GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_LUMINANCE, mOriginWidth,
+                    mOriginHeight, 0, GLES30.GL_LUMINANCE, GLES30.GL_UNSIGNED_BYTE, imageByteByteBuffer)
+            Log.d(TAG, "getImage glTexImage2D yTexture error=${GLES30.glGetError()}")
+            imageByteByteBuffer.position(mOriginWidth * mOriginHeight)
+
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mUVTextureId)
+            // GL_LUMINANCE_ALPHA -> (u, u, u, v)
+            GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_LUMINANCE_ALPHA, mOriginWidth / 2,
+                    mOriginHeight / 2, 0, GLES30.GL_LUMINANCE_ALPHA, GLES30.GL_UNSIGNED_BYTE, imageByteByteBuffer)
+            Log.d(TAG, "getImage glTexImage2D uvTexture error=${GLES30.glGetError()}")
+
             byteBuffer = draw()
             countDownLatch.countDown()
         }
@@ -144,59 +179,18 @@ class RotateRender : CommonGLRender() {
     fun setRotate(type: Int) {
         Log.d(TAG, "setRotate type=${type}")
         addTask {
-            val vertexArray: FloatArray
-            when (type) {
-                ROTATE_0 -> {
-                    vertexArray = floatArrayOf(
-                            0.0f, 0.0f,  // 左下
-                            1.0f, 0.0f, // 右下
-                            0.0f, 1.0f,  // 左上
-                            1.0f, 1.0f, // 右上
-                    )
-                }
-                ROTATE_90 -> {
-                    vertexArray = floatArrayOf(
-                            0.0f, 1.0f,
-                            0.0f, 0.0f,
-                            1.0f, 1.0f,
-                            1.0f, 0.0f,
-                    )
-                }
-                ROTATE_180 -> {
-                    vertexArray = floatArrayOf(
-                            1.0f, 1.0f,
-                            0.0f, 1.0f,
-                            1.0f, 0.0f,
-                            0.0f, 0.0f,
-                    )
-                }
-                ROTATE_270 -> {
-                    vertexArray = floatArrayOf(
-                            1.0f, 0.0f,
-                            1.0f, 1.0f,
-                            0.0f, 0.0f,
-                            0.0f, 1.0f,
-                    )
-                }
-                else -> {
-                    return@addTask
-                }
-            }
             mRotateType = type
-            // 重新载入
-            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mVboIds[1])
-            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, 8 * 4, FloatBuffer.wrap(vertexArray), GLES30.GL_STATIC_DRAW)
-
         }
     }
 
     override fun onRenderInit() {
         ///////////////////////////GLES渲染环境搭建开始////////////////////////////////////////
         // 创建一个2D纹理用于连接FBO的颜色附着
-        val texArray = IntArray(1)
+        val texArray = IntArray(2)
         GLES30.glGenTextures(1, texArray, 0)
         mFboTextureId = texArray[0]
-        // 设置该纹理的属性
+        // 设置该纹理ID为2D纹理
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mFboTextureId)
         setTexture2DAttributes(mFboTextureId)
 
         // 创建FBO
@@ -205,29 +199,33 @@ class RotateRender : CommonGLRender() {
         mFboId = fboArray[0]
         Log.d(TAG, "glGenFramebuffers error=${GLES30.glGetError()} fboId=${mFboId} fboTextureId=${mFboTextureId}")
 
-        // 创建纹理
-        GLES30.glGenTextures(1, texArray, 0)
-        mTextureId = texArray[0]
-        Log.d(TAG, "glGenTextures error=${GLES30.glGetError()} mTextureId=${mTextureId}")
-
-        setTexture2DAttributes(mTextureId)
+        // 创建Y变量纹理
+        GLES30.glGenTextures(2, texArray, 0)
+        mYTextureId = texArray[0]
+        Log.d(TAG, "glGenTextures error=${GLES30.glGetError()} mYTextureId=${mYTextureId} mUVTextureId=${texArray[1]}")
+        setTexture2DAttributes(mYTextureId)
+        setTexture2DAttributes(mUVTextureId)
 
         // 创建shader
         mVertexShader = GLES30.glCreateShader(GLES30.GL_VERTEX_SHADER)
         GLES30.glShaderSource(mVertexShader, vertexShader)
+        Log.d(TAG, "glShaderSource vertex error=${GLES30.glGetError()}")
         GLES30.glCompileShader(mVertexShader)
         Log.d(TAG, "glCompileShader vertex error=${GLES30.glGetError()}")
 
         mFragmentShader = GLES30.glCreateShader(GLES30.GL_FRAGMENT_SHADER)
         GLES30.glShaderSource(mFragmentShader, fragmentShader)
+        Log.d(TAG, "glShaderSource fragment error=${GLES30.glGetError()}")
         GLES30.glCompileShader(mFragmentShader)
         Log.d(TAG, "glCompileShader fragment error=${GLES30.glGetError()}")
 
         mProgramId = GLES30.glCreateProgram()
         GLES30.glAttachShader(mProgramId, mVertexShader)
+        Log.d(TAG, "glAttachShader vertex error=${GLES30.glGetError()}")
         GLES30.glAttachShader(mProgramId, mFragmentShader)
+        Log.d(TAG, "glAttachShader fragment error=${GLES30.glGetError()}")
         GLES30.glLinkProgram(mProgramId)
-        Log.d(TAG, "glLinkProgram error=${GLES30.glGetError()}")
+        Log.d(TAG, "glLinkProgram mProgramId=$mProgramId error=${GLES30.glGetError()}")
 
         // 生成VBO，减少传输顶点的次数
         GLES30.glGenBuffers(3, mVboIds, 0)
@@ -261,9 +259,13 @@ class RotateRender : CommonGLRender() {
     }
 
     override fun onRenderDestroy() {
-        if (mTextureId != 0) {
-            GLES30.glDeleteTextures(1, IntArray(mTextureId), 0)
-            mTextureId = 0
+        if (mYTextureId != 0) {
+            GLES30.glDeleteTextures(1, IntArray(mYTextureId), 0)
+            mYTextureId = 0
+        }
+        if (mUVTextureId != 0) {
+            GLES30.glDeleteTextures(1, IntArray(mUVTextureId), 0)
+            mUVTextureId = 0
         }
         if (mFboTextureId != 0) {
             GLES30.glDeleteTextures(1, IntArray(mFboTextureId), 0)
@@ -297,18 +299,35 @@ class RotateRender : CommonGLRender() {
      * 渲染
      * */
     private fun draw(): ByteBuffer {
+        val rotateMat3: FloatArray
         val drawWidth: Int
         val drawHeight: Int
-        if (mRotateType == ROTATE_90 || mRotateType == ROTATE_270) {
-            drawWidth = mOriginHeight
-            drawHeight = mOriginWidth
-        } else {
-            drawWidth = mOriginWidth
-            drawHeight = mOriginHeight
+        when (mRotateType) {
+            ROTATE_90 -> {
+                rotateMat3 = floatArrayOf(0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f)
+                drawWidth = mOriginHeight
+                drawHeight = mOriginWidth
+            }
+            ROTATE_180 -> {
+                rotateMat3 = floatArrayOf(-1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f)
+                drawWidth = mOriginWidth
+                drawHeight = mOriginHeight
+            }
+            ROTATE_270 -> {
+                rotateMat3 = floatArrayOf(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f)
+                drawWidth = mOriginHeight
+                drawHeight = mOriginWidth
+            }
+            else -> {
+                rotateMat3 = floatArrayOf(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f)
+                drawWidth = mOriginWidth
+                drawHeight = mOriginHeight
+            }
         }
+
         Log.d(TAG, "draw rotate=${mRotateType} drawWidth=${drawWidth} drawHeight=${drawHeight}")
         // 框定渲染区域
-        GLES30.glViewport(0, 0, drawWidth, drawHeight)
+        GLES30.glViewport(0, 0, drawWidth / 4, drawHeight * 3 / 2)
         Log.d(TAG, "draw glViewport error=${GLES30.glGetError()}")
 
         GLES30.glClearColor(1.0f, 1.0f, 1.0f, 1.0f)
@@ -319,18 +338,39 @@ class RotateRender : CommonGLRender() {
         Log.d(TAG, "draw glUseProgram error=${GLES30.glGetError()}")
         GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mFboId)
         Log.d(TAG, "draw glBindFramebuffer error=${GLES30.glGetError()}")
-        GLES30.glActiveTexture(GLES30.GL_TEXTURE0)
-        Log.d(TAG, "draw glActiveTexture error=${GLES30.glGetError()}")
 
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mTextureId)
-        Log.d(TAG, "draw glBindTexture error=${GLES30.glGetError()}")
+        // 将纹理ID与程序中的uniform变量绑定
+        val yLoc = GLES30.glGetUniformLocation(mProgramId, "yTextureMap")
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE0 + yLoc)
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mYTextureId)
+        // Set the Y plane sampler to texture unit
+        GLES30.glUniform1i(yLoc, yLoc)
+        val uvLoc = GLES30.glGetUniformLocation(mProgramId, "uvTextureMap")
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE0 + uvLoc)
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mUVTextureId)
+        // Set the UV plane sampler to texture unit
+        GLES30.glUniform1i(uvLoc, uvLoc)
+        Log.d(TAG, "draw active&bind yLoc=$yLoc uvLoc=$uvLoc")
+
+        // 上传width的值
+        val widthLoc = GLES30.glGetUniformLocation(mProgramId, "width")
+        Log.d(TAG, "glGetUniformLocation widthLoc=${widthLoc} error=${GLES30.glGetError()}")
+        GLES30.glUniform1f(widthLoc, drawWidth.toFloat())
+        Log.d(TAG, "glUniform1f error=${GLES30.glGetError()}")
+
+        // 上传旋转变换矩阵mat3
+        val mat3Loc = GLES30.glGetUniformLocation(mProgramId, "rotateM")
+        Log.d(TAG, "glGetUniformLocation rotateM=${mat3Loc} error=${GLES30.glGetError()}")
+        GLES30.glUniformMatrix3fv(mat3Loc, 1, false, rotateMat3, 0)
+        Log.d(TAG, "glUniformMatrix3fv error=${GLES30.glGetError()}")
+
         GLES30.glBindVertexArray(mVaoId)
         Log.d(TAG, "draw glBindVertexArray error=${GLES30.glGetError()}")
         GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_SHORT, 0)
         Log.d(TAG, "draw glDrawElements error=${GLES30.glGetError()}")
 
-        val buffer = ByteBuffer.allocateDirect(drawHeight * drawWidth * 4)
-        GLES30.glReadPixels(0, 0, drawWidth, drawHeight, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, buffer)
+        val buffer = ByteBuffer.allocateDirect(drawHeight * drawWidth * 3 / 2)
+        GLES30.glReadPixels(0, 0, drawWidth / 4, drawHeight * 3 / 2, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, buffer)
         Log.d(TAG, "draw glReadPixels error=${GLES30.glGetError()} position=${buffer.position()}" +
                 " capacity=${buffer.capacity()} limit=${buffer.limit()}")
         return buffer

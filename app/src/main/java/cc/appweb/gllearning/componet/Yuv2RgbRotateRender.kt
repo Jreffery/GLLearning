@@ -53,11 +53,6 @@ class Yuv2RgbRotateRender : CommonGLRender() {
     companion object {
         private const val TAG = "Yuv2RgbRotateRender"
 
-        const val ROTATE_0 = 0
-        const val ROTATE_90 = 1
-        const val ROTATE_180 = 2
-        const val ROTATE_270 = 3
-
         val vVertices = floatArrayOf(
                 -1.0f, -1.0f,   // 左下 （屏幕左上角）
                 1.0f, -1.0f,   // 右下 （屏幕右上角）
@@ -115,12 +110,6 @@ class Yuv2RgbRotateRender : CommonGLRender() {
         lateinit var byteBuffer: ByteBuffer
         val countDownLatch = CountDownLatch(1)
         addTask {
-
-//            val output = FileOutputStream(StorageUtil.getFile(StorageUtil.PATH_LEARNING_RAW + File.separator + System.currentTimeMillis() + "b.raw"))
-//            output.write(imageByteByteBuffer.array())
-//            output.flush()
-//            output.close()
-
             mOriginWidth = originWidth
             mOriginHeight = originHeight
 

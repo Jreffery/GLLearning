@@ -85,11 +85,6 @@ class EGLFragment : Fragment(), View.OnClickListener {
                 // ARGB_8888 int color = (A & 0xff) << 24 | (B & 0xff) << 16 | (G & 0xff) << 8 | (R & 0xff);
                 val grayBitmap = Bitmap.createBitmap(bitmapBuffer, mWidth, mHeight, Bitmap.Config.ARGB_8888)
                 mFragmentBinding.grayIv.setImageBitmap(grayBitmap)
-
-//                val output = FileOutputStream(StorageUtil.getFile(StorageUtil.PATH_LEARNING_RAW + File.separator + System.currentTimeMillis() + "b.raw"))
-//                output.write(buffer.array())
-//                output.flush()
-//                output.close()
             }
         }
     }

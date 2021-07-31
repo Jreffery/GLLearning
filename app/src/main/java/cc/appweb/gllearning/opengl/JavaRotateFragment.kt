@@ -10,11 +10,9 @@ import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import cc.appweb.gllearning.R
+import cc.appweb.gllearning.componet.CommonGLRender
 import cc.appweb.gllearning.componet.RotateRender
 import cc.appweb.gllearning.databinding.JavaRotateFragmentBinding
-import cc.appweb.gllearning.util.StorageUtil
-import java.io.File
-import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -31,7 +29,7 @@ class JavaRotateFragment : Fragment(), View.OnClickListener {
     private var mWidth = 0
     private var mHeight = 0
     private var mBitmapBuffer: ByteBuffer? = null
-    private var mRotateType = RotateRender.ROTATE_0
+    private var mRotateType = CommonGLRender.ROTATE_0
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mFragmentBinding = JavaRotateFragmentBinding.inflate(layoutInflater)
@@ -72,7 +70,7 @@ class JavaRotateFragment : Fragment(), View.OnClickListener {
                 // ARGB_8888 int color = (A & 0xff) << 24 | (B & 0xff) << 16 | (G & 0xff) << 8 | (R & 0xff);
                 val bitmapW: Int
                 val bitmapH: Int
-                if (mRotateType == RotateRender.ROTATE_90 || mRotateType == RotateRender.ROTATE_270) {
+                if (mRotateType == CommonGLRender.ROTATE_90 || mRotateType == CommonGLRender.ROTATE_270) {
                     bitmapW = mHeight
                     bitmapH = mWidth
                 } else {
@@ -82,23 +80,19 @@ class JavaRotateFragment : Fragment(), View.OnClickListener {
 
                 val grayBitmap = Bitmap.createBitmap(intBuffer, bitmapW, bitmapH, Bitmap.Config.ARGB_8888)
                 mFragmentBinding.picIv.setImageBitmap(grayBitmap)
-
-//                val output = FileOutputStream(StorageUtil.getFile(StorageUtil.PATH_LEARNING_RAW + File.separator + System.currentTimeMillis() + "b.raw"))
-//                output.write(bitmapBuffer.array())
-//                output.flush()
-//                output.close()
+//                StorageUtil.writeBufferIntoFile(StorageUtil.getFile(StorageUtil.PATH_LEARNING_RAW + File.separator + System.currentTimeMillis() + "b.raw").absolutePath, bitmapBuffer)
             }
             mFragmentBinding.rotate0 -> {
-                mRotateType = RotateRender.ROTATE_0
+                mRotateType = CommonGLRender.ROTATE_0
             }
             mFragmentBinding.rotate90 -> {
-                mRotateType = RotateRender.ROTATE_90
+                mRotateType = CommonGLRender.ROTATE_90
             }
             mFragmentBinding.rotate180 -> {
-                mRotateType = RotateRender.ROTATE_180
+                mRotateType = CommonGLRender.ROTATE_180
             }
             mFragmentBinding.rotate270 -> {
-                mRotateType = RotateRender.ROTATE_270
+                mRotateType = CommonGLRender.ROTATE_270
             }
         }
     }
