@@ -93,7 +93,7 @@ class RotateRender : CommonGLRender() {
                         "void main()                                \n" +
                         "{                                          \n" +
                         "    vec4 tempColor = texture(s_TextureMap, v_texCoord);   \n" + // 通过纹理和纹理坐标采样颜色值
-                        "    outColor = vec4(tempColor.b, tempColor.g, tempColor.r, tempColor.a);" +  // (原图 RGBA 通道被转成了 BGRA ？待解决)
+                        "    outColor = tempColor.bgra;" +  // android Bitmap.createBitmap color 里要求的排列是 ARGB （高位->低位），需要将b/r替换一下输出
                         "}"
     }
 

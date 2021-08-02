@@ -57,6 +57,7 @@ class VideoEncoder(width: Int, height: Int, frameRate: Int, bitRate: Int, iFrame
                 setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
                 // 根据手机设置不同的颜色参数
                 // 使用COLOR_FormatYUV420Flexible需要使用getInputImage的模式
+                // Android 对这部分NV21和NV12有兼容适配问题
                 setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar)
             } else {
                 // 根据手机设置不同的颜色参数

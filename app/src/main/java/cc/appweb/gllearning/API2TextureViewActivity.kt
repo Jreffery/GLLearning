@@ -399,7 +399,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
 
             reader?.let {
                 it.acquireNextImage()?.apply {
-                    // NV12
+                    // NV21
                     val byteBuffer1 = planes[0].buffer
                     val byteBuffer2 = planes[1].buffer
                     val byteArray = ByteArray(byteBuffer1.limit() + byteBuffer2.limit())
@@ -410,7 +410,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
                     //拍照成功
                     // 拍照成功
                     Thread {
-                        val file = StorageUtil.getFile("${StorageUtil.PATH_LEARNING_RAW + File.separator}${System.currentTimeMillis()}nv12.yuv")
+                        val file = StorageUtil.getFile("${StorageUtil.PATH_LEARNING_RAW + File.separator}${System.currentTimeMillis()}nv21.yuv")
                         try {
                             val fileOutput = FileOutputStream(file)
                             fileOutput.write(byteArray)
@@ -445,7 +445,7 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
 
                         // YUV420
                         val inputBuffer = ByteBuffer.allocate(mRecordSize!!.width * mRecordSize!!.height * 3 / 2)
-                        // plane[0] + plane[1] = NV12
+                        // plane[0] + plane[1] = NV21
                         // plane[0] + plane[2] = NV21
                         inputBuffer.put(planes[0].buffer)
                         inputBuffer.put(planes[1].buffer)

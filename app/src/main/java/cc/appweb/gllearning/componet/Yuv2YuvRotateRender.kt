@@ -10,7 +10,7 @@ import java.nio.ShortBuffer
 import java.util.concurrent.CountDownLatch
 
 /**
- * YUV420SP（NV12）图像旋转渲染器，输出为NV12
+ * YUV420SP（NV21）图像旋转渲染器，输出为NV21
  * */
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 class Yuv2YuvRotateRender : CommonGLRender() {
@@ -99,7 +99,7 @@ class Yuv2YuvRotateRender : CommonGLRender() {
 //                        "    mat3 rotateM = mat3(-1.0,0.0,0.0,0.0,-1.0,0.0,0.0,0.0,1.0);  \n" +
                         "    float offset = 1.0/width;              \n" + // YYYY 变量合并时的步长
                         "    vec2 move = vec2(0.5, 0.5);            \n" + // 纹理坐标平移矩阵（把原点作为中心），用作旋转前后的平移
-                        "    if (v_texCoord.t > (2.0/3.0) ) {       \n" + // NV12在长度的2/3后是UV的分量
+                        "    if (v_texCoord.t > (2.0/3.0) ) {       \n" + // NV21在长度的2/3后是UV的分量
                         "        float tt = (v_texCoord.t - (2.0/3.0)) * 3.0;  \n" + // 还原真实的t分量
                         "        vec2 b1 = vec2(v_texCoord.s, tt) - move;       \n" + // 平移，把原点作为中心
                         "        vec2 a1 = (rotateM * vec3(b1, 1.0) + vec3(move, 1.0)).st;  \n" +  // 旋转，并把坐标还原平移前
@@ -146,7 +146,7 @@ class Yuv2YuvRotateRender : CommonGLRender() {
             // FBO需要有纹理附着
             GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, mFboId)
             GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, mFboTextureId)
-            // RGBA -> YUV（NV12），width和height需要相应改变
+            // RGBA -> YUV（NV21），width和height需要相应改变
             GLES30.glTexImage2D(GLES30.GL_TEXTURE_2D, 0, GLES30.GL_RGBA, fboWidth / 4,
                     fboHeight * 3 / 2, 0, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, null)
             GLES30.glFramebufferTexture2D(GLES30.GL_FRAMEBUFFER, GLES30.GL_COLOR_ATTACHMENT0, GLES30.GL_TEXTURE_2D, mFboTextureId, 0)

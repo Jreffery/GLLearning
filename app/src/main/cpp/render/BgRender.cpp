@@ -323,7 +323,7 @@ void BgRender::initShader() {
             "void main()                                \n"
             "{                                          \n"
             "    vec4 tempColor = texture(s_TextureMap, v_texCoord);   \n" // 通过纹理和纹理坐标采样颜色值
-            "    float luminance = tempColor.b * 0.299 + tempColor.g * 0.587 + tempColor.r * 0.114;  \n"  // 通过颜色值计算灰度(原图 RGBA 通道被转成了 BGRA ？待解决)
+            "    float luminance = tempColor.r * 0.299 + tempColor.g * 0.587 + tempColor.b * 0.114;  \n"
             "    outColor = vec4(vec3(luminance), 1.0);         \n"
             "}"
     };

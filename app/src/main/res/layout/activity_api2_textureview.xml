@@ -50,7 +50,7 @@
 
             <Button
                 android:id="@+id/take_picture"
-                android:text="NV12对焦拍照"
+                android:text="NV21对焦拍照"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 

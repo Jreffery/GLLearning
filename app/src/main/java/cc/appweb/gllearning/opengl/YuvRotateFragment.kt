@@ -7,15 +7,12 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import cc.appweb.gllearning.componet.CommonGLRender
 import cc.appweb.gllearning.componet.Yuv2RgbRotateRender
 import cc.appweb.gllearning.componet.Yuv2YuvRotateRender
 import cc.appweb.gllearning.databinding.YuvRotateFragmentBinding
-import cc.appweb.gllearning.util.StorageUtil
-import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -57,7 +54,7 @@ class YuvRotateFragment : Fragment(), View.OnClickListener {
         super.onCreate(savedInstanceState)
 
 
-        val inputStream = context!!.resources.assets.open("nv12/1280x720nv12.yuv")
+        val inputStream = context!!.resources.assets.open("nv21/1280x720nv21.yuv")
         mWidth = 1280
         mHeight = 720
         mBitmapBuffer = ByteBuffer.allocateDirect(mWidth * mHeight * 3 / 2)
@@ -111,11 +108,11 @@ class YuvRotateFragment : Fragment(), View.OnClickListener {
             }
             mFragmentBinding.yuvRotate -> {
                 mYuv2YuvRotateRender.setRotate(mRotateType)
-                val nv12Buffer = mYuv2YuvRotateRender.getImage(mBitmapBuffer, mWidth, mHeight)
+                val nv21Buffer = mYuv2YuvRotateRender.getImage(mBitmapBuffer, mWidth, mHeight)
                 mBitmapBuffer.position(0)
                 m2RgbRotateRender.setRotate(CommonGLRender.ROTATE_0)
                 val start = System.nanoTime()
-                val bitmapBuffer = m2RgbRotateRender.getImage(nv12Buffer,
+                val bitmapBuffer = m2RgbRotateRender.getImage(nv21Buffer,
                         if (mRotateType == CommonGLRender.ROTATE_0 || mRotateType == CommonGLRender.ROTATE_180) mWidth else mHeight,
                         if (mRotateType == CommonGLRender.ROTATE_0 || mRotateType == CommonGLRender.ROTATE_180) mHeight else mWidth)
                 mFragmentBinding.draw2TimeTv.text = "渲染耗时${(System.nanoTime() - start) / 1000}微秒"

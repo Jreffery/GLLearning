@@ -10,7 +10,7 @@ import java.nio.ShortBuffer
 import java.util.concurrent.CountDownLatch
 
 /**
- * YUV420SP（NV12）图像旋转渲染器，输出为RGBA
+ * YUV420SP（NV21）图像旋转渲染器，输出为RGBA
  * */
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 class Yuv2RgbRotateRender : CommonGLRender() {
@@ -94,14 +94,15 @@ class Yuv2RgbRotateRender : CommonGLRender() {
                         "uniform sampler2D uvTextureMap;            \n" + // 保存uv变量的纹理
                         "void main()                                \n" +
                         "{                                          \n" +
-                        "    vec3 yuv;                              \n" +
-                        "    yuv.x = texture(yTextureMap, v_texCoord).r;   \n" +
-                        "    yuv.y = texture(uvTextureMap, v_texCoord).r-0.5;  \n" +
-                        "    yuv.z = texture(uvTextureMap, v_texCoord).a-0.5;  \n" +
-                        "    highp vec3 rgb = mat3( 1,       1,          1,                  \n" +
-                        "                0,      -0.344,     1.770,                  \n" +
-                        "                1.403,  -0.714,       0) * yuv;             \n" +
-                        "    outColor = vec4(rgb, 1);                        \n" +
+                        "    vec3 yvu;                              \n" +
+                        "    yvu.x = texture(yTextureMap, v_texCoord).r;   \n" +
+                        "    yvu.y = texture(uvTextureMap, v_texCoord).r-0.5;   \n" + // v
+                        "    yvu.z = texture(uvTextureMap, v_texCoord).a-0.5;   \n" + // u
+                        "    highp vec3 rgb;                        \n" +
+                        "    rgb.r = yvu.x + 1.402 * yvu.y;               \n" +
+                        "    rgb.g = yvu.x - 0.344 * yvu.z - 0.714 * yvu.y; \n" +
+                        "    rgb.b = yvu.x + 1.772 * yvu.z;         \n" +
+                        "    outColor = vec4(rgb, 1);               \n" +
                         "}"
     }
 
