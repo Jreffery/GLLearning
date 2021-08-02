@@ -5,17 +5,9 @@
     android:layout_height="match_parent"
     android:padding="10dp">
 
-    <Button
-        android:id="@+id/test_btn"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="渲染"/>
-
     <LinearLayout
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/test_btn"
+        app:layout_constraintTop_toTopOf="parent"
         android:id="@+id/rotate_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -54,20 +46,44 @@
 
     </LinearLayout>
 
-    <ImageView
-        android:id="@+id/pic_iv"
+    <Button
+        android:id="@+id/test_btn"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@id/rotate_container"
-        android:scaleType="centerInside"
-        android:layout_width="200dp"
-        android:layout_height="200dp"/>
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="NV12渲染成RGB"/>
+
+    <TextView
+        android:id="@+id/draw1_time_tv"
+        app:layout_constraintLeft_toRightOf="@id/test_btn"
+        app:layout_constraintBaseline_toBaselineOf="@id/test_btn"
+        android:layout_marginLeft="5dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
 
     <Button
         android:id="@+id/yuv_rotate"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/pic_iv"
-        android:text="NV12旋转"
+        app:layout_constraintTop_toBottomOf="@id/test_btn"
+        android:text="NV12旋转后渲染"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/draw2_time_tv"
+        app:layout_constraintLeft_toRightOf="@id/yuv_rotate"
+        app:layout_constraintBaseline_toBaselineOf="@id/yuv_rotate"
+        android:layout_marginLeft="5dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <ImageView
+        android:id="@+id/pic_iv"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/yuv_rotate"
+        android:scaleType="centerInside"
+        android:layout_width="200dp"
+        android:layout_height="200dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

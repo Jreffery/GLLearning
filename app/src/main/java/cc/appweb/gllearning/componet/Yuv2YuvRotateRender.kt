@@ -92,23 +92,23 @@ class Yuv2YuvRotateRender : CommonGLRender() {
                         "layout(location = 0) out vec4 outColor;    \n" + // 提供片段着色器输出变量的声明，这将是传递到下一阶段的颜色
                         "uniform sampler2D yTextureMap;             \n" + // 保存y变量的纹理
                         "uniform sampler2D uvTextureMap;            \n" + // 保存uv变量的纹理
-                        "uniform float width;                       \n" +
-                        "uniform mat3 rotateM;                      \n" +
+                        "uniform float width;                       \n" + // 原图的宽度
+                        "uniform mat3 rotateM;                      \n" + // 旋转变换矩阵
                         "void main()                                \n" +
                         "{                                          \n" +
 //                        "    mat3 rotateM = mat3(-1.0,0.0,0.0,0.0,-1.0,0.0,0.0,0.0,1.0);  \n" +
-                        "    float offset = 1.0/width;              \n" +
-                        "    vec2 move = vec2(0.5, 0.5);            \n" +
-                        "    if (v_texCoord.t > (2.0/3.0) ) {       \n" +
-                        "        float tt = (v_texCoord.t - (2.0/3.0)) * 3.0;  \n" +
-                        "        vec2 b1 = vec2(v_texCoord.s, tt) - move;       \n" +
-                        "        vec2 a1 = (rotateM * vec3(b1, 1.0) + vec3(move, 1.0)).st;  \n" +
+                        "    float offset = 1.0/width;              \n" + // YYYY 变量合并时的步长
+                        "    vec2 move = vec2(0.5, 0.5);            \n" + // 纹理坐标平移矩阵（把原点作为中心），用作旋转前后的平移
+                        "    if (v_texCoord.t > (2.0/3.0) ) {       \n" + // NV12在长度的2/3后是UV的分量
+                        "        float tt = (v_texCoord.t - (2.0/3.0)) * 3.0;  \n" + // 还原真实的t分量
+                        "        vec2 b1 = vec2(v_texCoord.s, tt) - move;       \n" + // 平移，把原点作为中心
+                        "        vec2 a1 = (rotateM * vec3(b1, 1.0) + vec3(move, 1.0)).st;  \n" +  // 旋转，并把坐标还原平移前
                         "        vec2 b2 = vec2(v_texCoord.s + 2.0 * offset, tt) - move; \n" +
                         "        vec2 a2 = (rotateM * vec3(b2, 1.0) + vec3(move, 1.0)).st;  \n" +
-                        "        outColor.rg = texture(uvTextureMap, a1).ra;  \n" +
+                        "        outColor.rg = texture(uvTextureMap, a1).ra;  \n" +  // 把两个UV合并成一个RGBA
                         "        outColor.ba = texture(uvTextureMap, a2).ra;  \n" +
                         "    } else {                               \n" +
-                        "        float tt = v_texCoord.t * 3.0 / 2.0;  \n" +
+                        "        float tt = v_texCoord.t * 3.0 / 2.0;  \n" + // 还原真实的t分量
                         "        vec2 b1 = vec2(v_texCoord.s, tt) - move;       \n" +
                         "        vec2 a1 = (rotateM * vec3(b1, 1.0) + vec3(move, 1.0)).st;  \n" +
                         "        vec2 b2 = vec2(v_texCoord.s + offset, tt) - move; \n" +
@@ -117,7 +117,7 @@ class Yuv2YuvRotateRender : CommonGLRender() {
                         "        vec2 a3 = (rotateM * vec3(b3, 1.0) + vec3(move, 1.0)).st;  \n" +
                         "        vec2 b4 = vec2(v_texCoord.s + offset * 3.0, tt) - move; \n" +
                         "        vec2 a4 = (rotateM * vec3(b4, 1.0) + vec3(move, 1.0)).st;  \n" +
-                        "        outColor.r = texture(yTextureMap, a1).r;  \n" +
+                        "        outColor.r = texture(yTextureMap, a1).r;  \n" +  // 把4个Y分量合并成一个RGBA
                         "        outColor.g = texture(yTextureMap, a2).r;  \n" +
                         "        outColor.b = texture(yTextureMap, a3).r;  \n" +
                         "        outColor.a = texture(yTextureMap, a4).r;  \n" +

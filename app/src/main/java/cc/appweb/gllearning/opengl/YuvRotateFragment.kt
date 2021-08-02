@@ -76,24 +76,26 @@ class YuvRotateFragment : Fragment(), View.OnClickListener {
                 m2RgbRotateRender.setRotate(mRotateType)
                 val start = System.nanoTime()
                 val bitmapBuffer = m2RgbRotateRender.getImage(mBitmapBuffer, mWidth, mHeight)
-                Log.d(TAG, "rotate yuv using ${(System.nanoTime() - start) / 1000} mirco second")
+                mFragmentBinding.draw1TimeTv.text = "渲染耗时${(System.nanoTime() - start) / 1000}微秒"
                 mBitmapBuffer.position(0)
-                val intBuffer = IntArray(mWidth * mHeight)
-                // 小端
-                bitmapBuffer.order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get(intBuffer)
-                // ARGB_8888 int color = (A & 0xff) << 24 | (B & 0xff) << 16 | (G & 0xff) << 8 | (R & 0xff);
-                val bitmapW: Int
-                val bitmapH: Int
-                if (mRotateType == CommonGLRender.ROTATE_90 || mRotateType == CommonGLRender.ROTATE_270) {
-                    bitmapW = mHeight
-                    bitmapH = mWidth
-                } else {
-                    bitmapW = mWidth
-                    bitmapH = mHeight
-                }
+                render(bitmapBuffer)
 
-                val grayBitmap = Bitmap.createBitmap(intBuffer, bitmapW, bitmapH, Bitmap.Config.ARGB_8888)
-                mFragmentBinding.picIv.setImageBitmap(grayBitmap)
+//                val intBuffer = IntArray(mWidth * mHeight)
+//                // 小端
+//                bitmapBuffer.order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get(intBuffer)
+//                // ARGB_8888 int color = (A & 0xff) << 24 | (B & 0xff) << 16 | (G & 0xff) << 8 | (R & 0xff);
+//                val bitmapW: Int
+//                val bitmapH: Int
+//                if (mRotateType == CommonGLRender.ROTATE_90 || mRotateType == CommonGLRender.ROTATE_270) {
+//                    bitmapW = mHeight
+//                    bitmapH = mWidth
+//                } else {
+//                    bitmapW = mWidth
+//                    bitmapH = mHeight
+//                }
+//
+//                val grayBitmap = Bitmap.createBitmap(intBuffer, bitmapW, bitmapH, Bitmap.Config.ARGB_8888)
+//                mFragmentBinding.picIv.setImageBitmap(grayBitmap)
             }
             mFragmentBinding.rotate0 -> {
                 mRotateType = CommonGLRender.ROTATE_0
@@ -108,12 +110,20 @@ class YuvRotateFragment : Fragment(), View.OnClickListener {
                 mRotateType = CommonGLRender.ROTATE_270
             }
             mFragmentBinding.yuvRotate -> {
-                mYuv2YuvRotateRender.setRotate(CommonGLRender.ROTATE_90)
-                val bitmapBuffer = mYuv2YuvRotateRender.getImage(mBitmapBuffer, mWidth, mHeight)
+                mYuv2YuvRotateRender.setRotate(mRotateType)
+                val nv12Buffer = mYuv2YuvRotateRender.getImage(mBitmapBuffer, mWidth, mHeight)
                 mBitmapBuffer.position(0)
-                val name = StorageUtil.PATH_LEARNING_RAW + File.separator + System.currentTimeMillis() + "rotate.raw"
-                StorageUtil.writeBufferIntoFile(StorageUtil.getFile(name).absolutePath, bitmapBuffer)
-                Toast.makeText(context!!, "保存到${name}", Toast.LENGTH_LONG).show()
+                m2RgbRotateRender.setRotate(CommonGLRender.ROTATE_0)
+                val start = System.nanoTime()
+                val bitmapBuffer = m2RgbRotateRender.getImage(nv12Buffer,
+                        if (mRotateType == CommonGLRender.ROTATE_0 || mRotateType == CommonGLRender.ROTATE_180) mWidth else mHeight,
+                        if (mRotateType == CommonGLRender.ROTATE_0 || mRotateType == CommonGLRender.ROTATE_180) mHeight else mWidth)
+                mFragmentBinding.draw2TimeTv.text = "渲染耗时${(System.nanoTime() - start) / 1000}微秒"
+                render(bitmapBuffer)
+
+//                val name = StorageUtil.PATH_LEARNING_RAW + File.separator + System.currentTimeMillis() + "rotate.raw"
+//                StorageUtil.writeBufferIntoFile(StorageUtil.getFile(name).absolutePath, bitmapBuffer)
+//                Toast.makeText(context!!, "保存到${name}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -122,6 +132,25 @@ class YuvRotateFragment : Fragment(), View.OnClickListener {
         super.onDestroy()
         m2RgbRotateRender.destroy()
         mYuv2YuvRotateRender.destroy()
+    }
+
+    private fun render(bitmapBuffer: ByteBuffer) {
+        val intBuffer = IntArray(mWidth * mHeight)
+        // 小端
+        bitmapBuffer.order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get(intBuffer)
+        // ARGB_8888 int color = (A & 0xff) << 24 | (B & 0xff) << 16 | (G & 0xff) << 8 | (R & 0xff);
+        val bitmapW: Int
+        val bitmapH: Int
+        if (mRotateType == CommonGLRender.ROTATE_90 || mRotateType == CommonGLRender.ROTATE_270) {
+            bitmapW = mHeight
+            bitmapH = mWidth
+        } else {
+            bitmapW = mWidth
+            bitmapH = mHeight
+        }
+
+        val grayBitmap = Bitmap.createBitmap(intBuffer, bitmapW, bitmapH, Bitmap.Config.ARGB_8888)
+        mFragmentBinding.picIv.setImageBitmap(grayBitmap)
     }
 
 }
