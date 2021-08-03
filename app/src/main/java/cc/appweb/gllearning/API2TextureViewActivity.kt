@@ -17,6 +17,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import cc.appweb.gllearning.componet.CommonGLRender
 import cc.appweb.gllearning.databinding.ActivityApi2TextureviewBinding
 import cc.appweb.gllearning.mediacodec.VideoEncoder
 import cc.appweb.gllearning.util.StorageUtil
@@ -190,26 +191,17 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
                     get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)?.apply {
                         val prefectSize = 1280 * 720
                         mPictureSize = null
-                        getOutputSizes(ImageFormat.JPEG)?.forEach { size ->
-                            Log.d(TAG, "support jpeg output size width=${size.width} height=${size.height}")
-                            mPictureSize?.let { picture ->
-                                if (abs(prefectSize - picture.width * picture.height) > abs(prefectSize - size.width * size.height)) {
-                                    mPictureSize = size
-                                }
-                            } ?: let {
-                                mPictureSize = size
-                            }
-                        }
-
                         mRecordSize = null
                         getOutputSizes(ImageFormat.YUV_420_888)?.forEach { size ->
                             Log.d(TAG, "support yuv420 output size width=${size.width} height=${size.height}")
                             mRecordSize?.let { recordSize ->
                                 if (abs(prefectSize - recordSize.width * recordSize.height) > abs(prefectSize - size.width * size.height)) {
                                     mRecordSize = size
+                                    mPictureSize = size
                                 }
                             } ?: let {
                                 mRecordSize = size
+                                mPictureSize = size
                             }
                         }
                     }
@@ -440,16 +432,19 @@ class API2TextureViewActivity : AppCompatActivity(), View.OnClickListener {
                     Log.i(TAG, "RecordReaderCallback acquire image")
                     if (mRecording) {
                         mEncoder ?: let {
-                            mEncoder = VideoEncoder(mRecordSize!!.width, mRecordSize!!.height, mRecordFps!!.upper, 3 * 1024 * 1024, 1)
+                            mEncoder = VideoEncoder(mRecordSize!!.width, mRecordSize!!.height, mRecordFps!!.upper,
+                                    3 * 1024 * 1024, 1,
+                                    if (mCameraFacing == CameraCharacteristics.LENS_FACING_FRONT) CommonGLRender.ROTATE_270 else CommonGLRender.ROTATE_90)
                         }
 
                         // YUV420
-                        val inputBuffer = ByteBuffer.allocate(mRecordSize!!.width * mRecordSize!!.height * 3 / 2)
+                        val inputBuffer = ByteBuffer.allocateDirect(mRecordSize!!.width * mRecordSize!!.height * 3 / 2)
                         // plane[0] + plane[1] = NV21
                         // plane[0] + plane[2] = NV21
                         inputBuffer.put(planes[0].buffer)
                         inputBuffer.put(planes[1].buffer)
-                        mEncoder!!.offerImage(inputBuffer.array())
+                        inputBuffer.flip()
+                        mEncoder!!.offerImage(inputBuffer)
                     } else {
                         mEncoder?.apply {
                             stop()

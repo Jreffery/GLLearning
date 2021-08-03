@@ -4,6 +4,8 @@ import android.media.*
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import cc.appweb.gllearning.componet.CommonGLRender
+import cc.appweb.gllearning.componet.Yuv2YuvRotateRender
 import cc.appweb.gllearning.util.StorageUtil
 import java.io.File
 import java.nio.ByteBuffer
@@ -19,15 +21,19 @@ import java.util.concurrent.TimeUnit
  * @param frameRate 帧率
  * @param bitRate 码率
  * @param iFrameInterval I帧时间间隔
+ * @param rotateType 旋转角度
  * */
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-class VideoEncoder(width: Int, height: Int, frameRate: Int, bitRate: Int, iFrameInterval: Int) {
+class VideoEncoder(val width: Int, val height: Int, frameRate: Int, bitRate: Int,
+                   iFrameInterval: Int, rotateType: Int = CommonGLRender.ROTATE_0) {
 
     private var mMediaCodec: MediaCodec
 
     private var mStartTime: Long = -1
 
     private var mOutputThread: OutputThread? = null
+
+    private var mRotateRender: Yuv2YuvRotateRender? = null
 
     companion object {
         private const val TAG = "VideoCoder"
@@ -48,10 +54,17 @@ class VideoEncoder(width: Int, height: Int, frameRate: Int, bitRate: Int, iFrame
             }
         }
 
+        if (rotateType != CommonGLRender.ROTATE_0) {
+            mRotateRender = Yuv2YuvRotateRender()
+            mRotateRender!!.initRender()
+            mRotateRender!!.setRotate(rotateType)
+        }
+
         // 创建codec--H.264/AVC video
         val mediacodec = MediaCodec.createEncoderByType("video/avc")
         // 创建视频格式
-        MediaFormat.createVideoFormat("video/avc", width, height).apply {
+        MediaFormat.createVideoFormat("video/avc", if (rotateType == CommonGLRender.ROTATE_90 || rotateType == CommonGLRender.ROTATE_270) height else width,
+                if (rotateType == CommonGLRender.ROTATE_90 || rotateType == CommonGLRender.ROTATE_270) width else height).apply {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 // 设置码率控制模式为 固定码率
                 setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR)
@@ -86,7 +99,7 @@ class VideoEncoder(width: Int, height: Int, frameRate: Int, bitRate: Int, iFrame
      * @param inputArray 输入数据
      * @param outputArray 输出数据
      * */
-    fun offerImage(inputArray: ByteArray) {
+    fun offerImage(nv21Buffer: ByteBuffer) {
         val nowTime = System.currentTimeMillis()
         if (mStartTime < 0) {
             mStartTime = nowTime
@@ -94,6 +107,11 @@ class VideoEncoder(width: Int, height: Int, frameRate: Int, bitRate: Int, iFrame
                 start()
             }
         }
+        var putIntoBuffer = nv21Buffer
+        mRotateRender?.let {
+            putIntoBuffer = it.getImage(nv21Buffer, width, height)
+        }
+
         try {
             // 获取可用的输入缓存区索引
             val inputBufferIndex = mMediaCodec.dequeueInputBuffer(0)
@@ -108,9 +126,9 @@ class VideoEncoder(width: Int, height: Int, frameRate: Int, bitRate: Int, iFrame
                     // 清空bytebuffer数据，重置
                     clear()
                     // 传入待编码数据
-                    put(inputArray)
+                    put(putIntoBuffer)
                     // 传入Codec
-                    mMediaCodec.queueInputBuffer(inputBufferIndex, 0, inputArray.size, (nowTime - mStartTime) * 1000, 0)
+                    mMediaCodec.queueInputBuffer(inputBufferIndex, 0, putIntoBuffer.limit(), (nowTime - mStartTime) * 1000, 0)
                 }
             } else {
                 // 没有可用的输入缓存区，丢弃视频帧
@@ -156,6 +174,8 @@ class VideoEncoder(width: Int, height: Int, frameRate: Int, bitRate: Int, iFrame
         mOutputThread!!.mRunning = false
         mMediaCodec.stop()
         mMediaCodec.release()
+        mRotateRender?.destroy()
+        mRotateRender = null
     }
 
     private data class FrameData(val info: MediaCodec.BufferInfo, val data: ByteBuffer)
