@@ -31,7 +31,7 @@ class JavaRotateFragment : Fragment(), View.OnClickListener {
     private var mBitmapBuffer: ByteBuffer? = null
     private var mRotateType = CommonGLRender.ROTATE_0
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         mFragmentBinding = JavaRotateFragmentBinding.inflate(layoutInflater)
         return mFragmentBinding.root
     }

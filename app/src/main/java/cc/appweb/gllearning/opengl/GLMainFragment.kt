@@ -16,7 +16,7 @@ class GLMainFragment : Fragment(), View.OnClickListener {
 
     private lateinit var mFragmentBinding: GlMainFragmentBinding
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         mFragmentBinding = GlMainFragmentBinding.inflate(inflater)
         return mFragmentBinding.root
     }
@@ -26,6 +26,7 @@ class GLMainFragment : Fragment(), View.OnClickListener {
         mFragmentBinding.glRotate.setOnClickListener(this)
         mFragmentBinding.javaRotate.setOnClickListener(this)
         mFragmentBinding.yuvRotate.setOnClickListener(this)
+        mFragmentBinding.textureRender.setOnClickListener(this)
     }
 
     override fun onClick(v: View?) {
@@ -60,6 +61,13 @@ class GLMainFragment : Fragment(), View.OnClickListener {
                         addToBackStack(null)
                         commit()
                     }
+                }
+            }
+            mFragmentBinding.textureRender -> {
+                fragmentManager!!.beginTransaction().apply {
+                    replace(R.id.fragment_container, TextureRenderFragment())
+                    addToBackStack(null)
+                    commit()
                 }
             }
         }

@@ -38,4 +38,12 @@
         android:layout_height="wrap_content"
         android:text="Yuv Rotate"/>
 
+    <Button
+        android:id="@+id/texture_render"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/yuv_rotate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TextureView Render"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

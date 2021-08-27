@@ -16,13 +16,16 @@ import cc.appweb.gllearning.databinding.YuvRotateFragmentBinding
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
+/**
+ * 旋转、渲染YUV格式图片的示例
+ * */
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 class YuvRotateFragment : Fragment(), View.OnClickListener {
 
     private lateinit var mFragmentBinding: YuvRotateFragmentBinding
     private lateinit var m2RgbRotateRender: Yuv2RgbRotateRender
     private lateinit var mYuv2YuvRotateRender: Yuv2YuvRotateRender
-    private lateinit var mBitmapBuffer: ByteBuffer
+    private lateinit var mN21Buffer: ByteBuffer
 
     private var mWidth = 0
     private var mHeight = 0
@@ -32,7 +35,7 @@ class YuvRotateFragment : Fragment(), View.OnClickListener {
         private const val TAG = "YuvRotateFragment"
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         mFragmentBinding = YuvRotateFragmentBinding.inflate(inflater)
         return mFragmentBinding.root
     }
@@ -53,18 +56,17 @@ class YuvRotateFragment : Fragment(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         val inputStream = context!!.resources.assets.open("nv21/1280x720nv21.yuv")
         mWidth = 1280
         mHeight = 720
-        mBitmapBuffer = ByteBuffer.allocateDirect(mWidth * mHeight * 3 / 2)
+        mN21Buffer = ByteBuffer.allocateDirect(mWidth * mHeight * 3 / 2)
         var size: Int
         val data = ByteArray(1024)
         while (inputStream.read(data).also { size = it } != -1) {
-            mBitmapBuffer.put(data, 0, size)
+            mN21Buffer.put(data, 0, size)
         }
-        mBitmapBuffer.flip()
-        Log.d(TAG, "mBitmapBuffer capacity=${mBitmapBuffer.capacity()} limit=${mBitmapBuffer.limit()} pos=${mBitmapBuffer.position()}")
+        mN21Buffer.flip()
+        Log.d(TAG, "mBitmapBuffer capacity=${mN21Buffer.capacity()} limit=${mN21Buffer.limit()} pos=${mN21Buffer.position()}")
     }
 
     override fun onClick(v: View?) {
@@ -72,9 +74,9 @@ class YuvRotateFragment : Fragment(), View.OnClickListener {
             mFragmentBinding.testBtn -> {
                 m2RgbRotateRender.setRotate(mRotateType)
                 val start = System.nanoTime()
-                val bitmapBuffer = m2RgbRotateRender.getImage(mBitmapBuffer, mWidth, mHeight)
+                val bitmapBuffer = m2RgbRotateRender.getImage(mN21Buffer, mWidth, mHeight)
                 mFragmentBinding.draw1TimeTv.text = "渲染耗时${(System.nanoTime() - start) / 1000}微秒"
-                mBitmapBuffer.position(0)
+                mN21Buffer.position(0)
                 render(bitmapBuffer)
 
 //                val intBuffer = IntArray(mWidth * mHeight)
@@ -108,8 +110,8 @@ class YuvRotateFragment : Fragment(), View.OnClickListener {
             }
             mFragmentBinding.yuvRotate -> {
                 mYuv2YuvRotateRender.setRotate(mRotateType)
-                val nv21Buffer = mYuv2YuvRotateRender.getImage(mBitmapBuffer, mWidth, mHeight)
-                mBitmapBuffer.position(0)
+                val nv21Buffer = mYuv2YuvRotateRender.getImage(mN21Buffer, mWidth, mHeight)
+                mN21Buffer.position(0)
                 m2RgbRotateRender.setRotate(CommonGLRender.ROTATE_0)
                 val start = System.nanoTime()
                 val bitmapBuffer = m2RgbRotateRender.getImage(nv21Buffer,

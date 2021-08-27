@@ -26,7 +26,7 @@ class RotateFragment : Fragment(), View.OnClickListener {
     private var mByteCount: Int = 0
     private var mOriginalBitmap: Bitmap? = null
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         mFragmentBinding = GlRotateFragmentBinding.inflate(layoutInflater)
         return mFragmentBinding.root
     }
