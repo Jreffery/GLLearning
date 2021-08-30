@@ -38,7 +38,7 @@ class GLLoopThread : Thread() {
     }
 
     override fun run() {
-        name = "RotateRender-${threadNum++}"
+        name = "GLRender-${threadNum++}"
         Log.i(TAG, "LoopThread start")
         while (!mStop || !mTaskList.isEmpty()) {
             // 获取任务

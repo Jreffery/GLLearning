@@ -64,10 +64,12 @@ class GLMainFragment : Fragment(), View.OnClickListener {
                 }
             }
             mFragmentBinding.textureRender -> {
-                fragmentManager!!.beginTransaction().apply {
-                    replace(R.id.fragment_container, TextureRenderFragment())
-                    addToBackStack(null)
-                    commit()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    fragmentManager!!.beginTransaction().apply {
+                        replace(R.id.fragment_container, TextureRenderFragment())
+                        addToBackStack(null)
+                        commit()
+                    }
                 }
             }
         }

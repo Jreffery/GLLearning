@@ -18,61 +18,44 @@ class Yuv2YuvRotateRender : CommonGLRender() {
     private var mRotateType = ROTATE_180
 
     // FBO ID
-    private var mFboId: Int = 0
+    private var mFboId: Int = -1
 
     // FBO附着的纹理id
-    private var mFboTextureId: Int = 0;
+    private var mFboTextureId: Int = -1
 
     // y变量 纹理ID
-    private var mYTextureId: Int = 0
+    private var mYTextureId: Int = -1
 
     // uv变量 纹理ID
-    private var mUVTextureId: Int = 0
+    private var mUVTextureId: Int = -1
 
     // 顶点shader
-    private var mVertexShader: Int = 0
+    private var mVertexShader: Int = -1
 
     // 片元shader
-    private var mFragmentShader: Int = 0
+    private var mFragmentShader: Int = -1
 
     // 程序 ID
-    private var mProgramId: Int = 0
+    private var mProgramId: Int = -1
 
     // 3个VBO，OpenGLES坐标顶点、纹理坐标顶点、顶点绘制顺序
     private val mVboIds = IntArray(3)
 
     // VAO ID
-    private var mVaoId: Int = 0
+    private var mVaoId: Int = -1
 
     // 原图宽度
-    private var mOriginWidth = 0
+    private var mOriginWidth = -1
 
     // 原图高度
-    private var mOriginHeight = 0
+    private var mOriginHeight = -1
 
     companion object {
         private const val TAG = "Yuv2YuvRotateRender"
 
-        val vVertices = floatArrayOf(
-                -1.0f, -1.0f,   // 左下 （屏幕左上角）
-                1.0f, -1.0f,   // 右下 （屏幕右上角）
-                -1.0f, 1.0f,   // 左上 （屏幕左下角）
-                1.0f, 1.0f,
-        )
-
-        //fbo 纹理坐标与正常纹理方向不同，原点位于左下角
-        val vFboTexCoors = floatArrayOf(
-                0.0f, 0.0f,  // 左下
-                1.0f, 0.0f,  // 右下
-                0.0f, 1.0f,  // 左上
-                1.0f, 1.0f)
-
-        // 绘制顺序
-        val indices = shortArrayOf(0, 1, 2, 1, 2, 3)
-
         // GLSL语言基础 https://my.oschina.net/sweetdark/blog/208024
         // 顶点着色器 shader
-        val vertexShader =
+        const val vertexShader =
                 "#version 300 es                            \n" + // 声明使用OpenGLES 3.0
                         "layout(location = 0) in vec4 a_position;   \n" + // 声明输入四维向量
                         "layout(location = 1) in vec2 a_texCoord;   \n" + // 声明输入二维向量
@@ -84,8 +67,8 @@ class Yuv2YuvRotateRender : CommonGLRender() {
                         "}                                          \n"
 
 
-        // 用于FBO渲染的片段着色器shader，取每个像素的灰度值
-        val fragmentShader =
+        // 用于FBO渲染的片段着色器shader，从YUV旋转成YUV
+        const val fragmentShader =
                 "#version 300 es                            \n" +
                         "precision highp float;                   \n" + // 设置默认的精度限定符
                         "in vec2 v_texCoord;                        \n" + // 导入纹理坐标，描述片段
@@ -202,7 +185,8 @@ class Yuv2YuvRotateRender : CommonGLRender() {
         // 创建Y变量纹理
         GLES30.glGenTextures(2, texArray, 0)
         mYTextureId = texArray[0]
-        Log.d(TAG, "glGenTextures error=${GLES30.glGetError()} mYTextureId=${mYTextureId} mUVTextureId=${texArray[1]}")
+        mUVTextureId = texArray[1]
+        Log.d(TAG, "glGenTextures error=${GLES30.glGetError()} mYTextureId=${mYTextureId} mUVTextureId=${mUVTextureId}")
         setTexture2DAttributes(mYTextureId)
         setTexture2DAttributes(mUVTextureId)
 
@@ -231,11 +215,11 @@ class Yuv2YuvRotateRender : CommonGLRender() {
         GLES30.glGenBuffers(3, mVboIds, 0)
         // 上传VBO数据
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mVboIds[0])
-        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, 8 * 4, FloatBuffer.wrap(vVertices), GLES30.GL_STATIC_DRAW)
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, 8 * 4, FloatBuffer.wrap(vVerticesCoors), GLES30.GL_STATIC_DRAW)
         GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, mVboIds[1])
-        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, 8 * 4, FloatBuffer.wrap(vFboTexCoors), GLES30.GL_STATIC_DRAW)
+        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, 8 * 4, FloatBuffer.wrap(vTextureCoors), GLES30.GL_STATIC_DRAW)
         GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, mVboIds[2])
-        GLES30.glBufferData(GLES30.GL_ELEMENT_ARRAY_BUFFER, 6 * 2, ShortBuffer.wrap(indices), GLES30.GL_STATIC_DRAW)
+        GLES30.glBufferData(GLES30.GL_ELEMENT_ARRAY_BUFFER, 6 * 2, ShortBuffer.wrap(vTextureDrawIndices), GLES30.GL_STATIC_DRAW)
         Log.d(TAG, "glBufferData error=${GLES30.glGetError()}")
 
         // 生成VAO，减少VBO的操作
@@ -259,39 +243,39 @@ class Yuv2YuvRotateRender : CommonGLRender() {
     }
 
     override fun onRenderDestroy() {
-        if (mYTextureId != 0) {
+        if (mYTextureId != -1) {
             GLES30.glDeleteTextures(1, IntArray(mYTextureId), 0)
-            mYTextureId = 0
+            mYTextureId = -1
         }
-        if (mUVTextureId != 0) {
+        if (mUVTextureId != -1) {
             GLES30.glDeleteTextures(1, IntArray(mUVTextureId), 0)
-            mUVTextureId = 0
+            mUVTextureId = -1
         }
-        if (mFboTextureId != 0) {
+        if (mFboTextureId != -1) {
             GLES30.glDeleteTextures(1, IntArray(mFboTextureId), 0)
-            mFboTextureId = 0
+            mFboTextureId = -1
         }
-        if (mFboId != 0) {
+        if (mFboId != -1) {
             GLES30.glDeleteFramebuffers(1, IntArray(mFboId), 0)
-            mFboId = 0
+            mFboId = -1
         }
-        if (mProgramId != 0) {
+        if (mProgramId != -1) {
             GLES30.glDeleteProgram(mProgramId)
-            mProgramId = 0
+            mProgramId = -1
         }
         GLES30.glDeleteBuffers(3, mVboIds, 0)
 
-        if (mVaoId != 0) {
+        if (mVaoId != -1) {
             GLES30.glDeleteVertexArrays(1, IntArray(mVaoId), 0)
-            mVaoId = 0
+            mVaoId = -1
         }
-        if (mVertexShader != 0) {
+        if (mVertexShader != -1) {
             GLES30.glDeleteShader(mVertexShader)
-            mVertexShader = 0
+            mVertexShader = -1
         }
-        if (mFragmentShader != 0) {
+        if (mFragmentShader != -1) {
             GLES30.glDeleteShader(mFragmentShader)
-            mFragmentShader = 0
+            mFragmentShader = -1
         }
     }
 
