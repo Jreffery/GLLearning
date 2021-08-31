@@ -172,11 +172,11 @@ class TextureViewRender(private val surfaceTexture: SurfaceTexture, private val 
             nv21ByteBuffer.position(0)
 
             // 框定渲染范围
-            GLES30.glViewport(0, 0, viewWidth, viewHeight)
+            setViewport(viewWidth, viewHeight, width, height)
             Log.d(TAG, "draw glViewport error=${GLES30.glGetError()}")
 
             // 清除缓冲区
-            GLES30.glClearColor(0.0f, 1.0f, 1.0f, 1.0f)
+            GLES30.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
             GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
             Log.d(TAG, "draw glClear error=${GLES30.glGetError()}")
 
@@ -234,6 +234,36 @@ class TextureViewRender(private val surfaceTexture: SurfaceTexture, private val 
             Log.d(TAG, "render finish use ${System.currentTimeMillis() - start}ms")
         }
         lock.await()
+    }
+
+    /**
+     * 框定渲染范围，达到fitCenter的效果
+     *
+     * @param viewWidth 渲染view的宽度
+     * @param viewHeight 渲染view的高度
+     * @param imageWidth 图片宽度
+     * @param imageHeight 图片高度
+     * */
+    private fun setViewport(viewWidth: Int, viewHeight: Int, imageWidth: Int, imageHeight: Int) {
+        val drawWidth: Int
+        val drawHeight: Int
+        val x: Int
+        val y: Int
+        val viewRatio: Float = viewWidth.toFloat() / viewHeight.toFloat()
+        val imageRatio: Float = imageWidth.toFloat() / imageHeight.toFloat()
+        if (viewRatio > imageRatio) {
+            drawHeight = viewHeight
+            drawWidth = (imageRatio * drawHeight.toFloat()).toInt()
+            y = 0
+            x = (viewWidth - drawWidth) / 2
+        } else {
+            drawWidth = viewWidth
+            drawHeight = (drawWidth.toFloat() * imageHeight.toFloat() / imageWidth.toFloat()).toInt()
+            x = 0
+            y = (viewHeight - drawHeight) / 2
+        }
+        Log.d(TAG, "setViewport drawWidth=$drawWidth drawHeight=$drawHeight x=$x y=$y")
+        GLES30.glViewport(x, y, drawWidth, drawHeight)
     }
 
 }
