@@ -13,8 +13,8 @@ import java.util.concurrent.CountDownLatch
  * 表面纹理渲染器，采用NV21数据源
  * */
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-class TextureViewRender(private val surfaceTexture: SurfaceTexture, private val viewWidth: Int,
-                        private val viewHeight: Int) : CommonGLRender() {
+open class TextureViewRender(private val surfaceTexture: SurfaceTexture, private val viewWidth: Int,
+                             private val viewHeight: Int) : CommonGLRender() {
 
     // y变量 纹理ID
     private var mYTextureId: Int = -1
@@ -32,17 +32,17 @@ class TextureViewRender(private val surfaceTexture: SurfaceTexture, private val 
     private var mProgramId: Int = -1
 
     // 顶点坐标数组
-    private val mVertexCoorsBuffer = ByteBuffer.allocateDirect(8 * 4).apply {
+    protected val mVertexCoorsBuffer = ByteBuffer.allocateDirect(8 * 4).apply {
         order(ByteOrder.nativeOrder()).asFloatBuffer().put(vVerticesCoors).flip()
     }
 
     // 纹理坐标数组
-    private val mTextureCoorsBuffer = ByteBuffer.allocateDirect(8 * 4).apply {
+    protected val mTextureCoorsBuffer = ByteBuffer.allocateDirect(8 * 4).apply {
         order(ByteOrder.nativeOrder()).asFloatBuffer().put(vTextureCoors).flip()
     }
 
     // 绘制顶点顺序数组
-    private val mIndicesBuffer = ByteBuffer.allocateDirect(6 * 2).apply {
+    protected val mIndicesBuffer = ByteBuffer.allocateDirect(6 * 2).apply {
         order(ByteOrder.nativeOrder()).asShortBuffer().put(vTextureDrawIndices).flip()
     }
 
@@ -129,7 +129,6 @@ class TextureViewRender(private val surfaceTexture: SurfaceTexture, private val 
         GLES30.glAttachShader(mProgramId, mFragmentShader)
         GLES30.glLinkProgram(mProgramId)
         Log.d(TAG, "link program error=${GLES30.glGetError()}")
-
     }
 
     override fun onRenderDestroy() {
@@ -226,14 +225,34 @@ class TextureViewRender(private val surfaceTexture: SurfaceTexture, private val 
             GLES30.glFlush()
             Log.d(TAG, "glFlush() error=${GLES30.glGetError()}")
 
-            // 交换缓冲区
-            EGL14.eglSwapBuffers(mEglDisplay, mEglSurface)
-            Log.d(TAG, "eglSwapBuffers error=${EGL14.eglGetError()}")
+            // 渲染完成后调用
+            finishRender()
 
             lock.countDown()
             Log.d(TAG, "render finish use ${System.currentTimeMillis() - start}ms")
         }
         lock.await()
+    }
+
+    /**
+     * 完成渲染后调用
+     * */
+    protected open fun finishRender() {
+        // 交换缓冲区
+        EGL14.eglSwapBuffers(mEglDisplay, mEglSurface)
+        Log.d(TAG, "eglSwapBuffers error=${EGL14.eglGetError()}")
+    }
+
+    /**
+     * 渲染图片的位置属性
+     * @param x 渲染View范围的渲染x偏移量
+     * @param y 渲染View范围的渲染y偏移量
+     * @param drawWidth 渲染View范围的渲染宽度
+     * @param drawHeight 渲染View范围内的渲染高度
+     * */
+    protected open fun finishViewport(x: Int, y: Int, drawWidth: Int, drawHeight: Int) {
+        Log.d(TAG, "setViewport drawWidth=$drawWidth drawHeight=$drawHeight x=$x y=$y")
+        GLES30.glViewport(x, y, drawWidth, drawHeight)
     }
 
     /**
@@ -262,8 +281,7 @@ class TextureViewRender(private val surfaceTexture: SurfaceTexture, private val 
             x = 0
             y = (viewHeight - drawHeight) / 2
         }
-        Log.d(TAG, "setViewport drawWidth=$drawWidth drawHeight=$drawHeight x=$x y=$y")
-        GLES30.glViewport(x, y, drawWidth, drawHeight)
+        finishViewport(x, y, drawWidth, drawHeight)
     }
 
 }
