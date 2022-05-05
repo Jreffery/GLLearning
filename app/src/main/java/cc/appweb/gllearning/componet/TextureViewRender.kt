@@ -134,11 +134,11 @@ open class TextureViewRender(private val surfaceTexture: SurfaceTexture, private
     override fun onRenderDestroy() {
         Log.d(TAG, "onRenderDestroy")
         if (mYTextureId != -1) {
-            GLES30.glDeleteTextures(1, IntArray(mYTextureId), 0)
+            GLES30.glDeleteTextures(1, intArrayOf(mYTextureId), 0)
             mYTextureId = -1
         }
         if (mUVTextureId != -1) {
-            GLES30.glDeleteTextures(1, IntArray(mUVTextureId), 0)
+            GLES30.glDeleteTextures(1, intArrayOf(mUVTextureId), 0)
             mUVTextureId = -1
         }
         if (mProgramId != -1) {

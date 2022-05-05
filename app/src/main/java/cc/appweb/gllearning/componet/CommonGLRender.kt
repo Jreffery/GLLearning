@@ -106,13 +106,14 @@ abstract class CommonGLRender {
         /**
          * 设置通用的2D纹理属性
          * */
-        fun setTexture2DAttributes(textureId: Int) {
+        fun setTexture2DAttributes(textureId: Int, closure: (()->Unit)? = null) {
             GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureId)
             // 设置该纹理的填充属性
             GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE.toFloat())
             GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE.toFloat())
             GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR)
             GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR)
+            closure?.invoke()
             GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, GLES30.GL_NONE)
         }
     }

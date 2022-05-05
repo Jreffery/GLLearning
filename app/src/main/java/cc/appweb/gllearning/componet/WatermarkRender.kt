@@ -111,7 +111,7 @@ class WatermarkRender(surfaceTexture: SurfaceTexture,
         Log.i(TAG, "onRenderDestroy")
         super.onRenderDestroy()
         if (mWatermarkTexture != -1) {
-            GLES30.glDeleteTextures(1, IntArray(mWatermarkTexture), 0)
+            GLES30.glDeleteTextures(1, intArrayOf(mWatermarkTexture), 0)
             mWatermarkTexture = -1
         }
         if (mWatermarkProgram != -1) {

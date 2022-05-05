@@ -244,19 +244,19 @@ class Yuv2YuvRotateRender : CommonGLRender() {
 
     override fun onRenderDestroy() {
         if (mYTextureId != -1) {
-            GLES30.glDeleteTextures(1, IntArray(mYTextureId), 0)
+            GLES30.glDeleteTextures(1, intArrayOf(mYTextureId), 0)
             mYTextureId = -1
         }
         if (mUVTextureId != -1) {
-            GLES30.glDeleteTextures(1, IntArray(mUVTextureId), 0)
+            GLES30.glDeleteTextures(1, intArrayOf(mUVTextureId), 0)
             mUVTextureId = -1
         }
         if (mFboTextureId != -1) {
-            GLES30.glDeleteTextures(1, IntArray(mFboTextureId), 0)
+            GLES30.glDeleteTextures(1, intArrayOf(mFboTextureId), 0)
             mFboTextureId = -1
         }
         if (mFboId != -1) {
-            GLES30.glDeleteFramebuffers(1, IntArray(mFboId), 0)
+            GLES30.glDeleteFramebuffers(1, intArrayOf(mFboId), 0)
             mFboId = -1
         }
         if (mProgramId != -1) {
@@ -266,7 +266,7 @@ class Yuv2YuvRotateRender : CommonGLRender() {
         GLES30.glDeleteBuffers(3, mVboIds, 0)
 
         if (mVaoId != -1) {
-            GLES30.glDeleteVertexArrays(1, IntArray(mVaoId), 0)
+            GLES30.glDeleteVertexArrays(1, intArrayOf(mVaoId), 0)
             mVaoId = -1
         }
         if (mVertexShader != -1) {

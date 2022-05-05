@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    
+    <Button
+        android:id="@+id/bitmap_scale"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Bitmap"/>
+
+    <Button
+        android:layout_marginLeft="5dp"
+        android:id="@+id/gles_scale"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/bitmap_scale"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="GLES"/>
+    
+    <TextView
+        android:id="@+id/bitmap_cost_time_tv"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bitmap_scale"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/gles_cost_time_tv"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bitmap_cost_time_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    
+    <ImageView
+        android:id="@+id/scale_show_view"
+        android:scaleType="fitXY"
+        android:layout_marginTop="5dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/gles_cost_time_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    
+    <TextView
+        android:id="@+id/detect_view"
+        app:layout_constraintTop_toBottomOf="@id/scale_show_view"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:background="@color/white"
+        android:layout_width="0dp"
+        android:text="我是"
+        android:layout_height="0dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
